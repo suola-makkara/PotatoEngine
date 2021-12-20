@@ -2,7 +2,6 @@
 project ("PotatoEngine")
 
 set(GLAD_ALL_EXTENSIONS ON)
-set(GLAD_INSTALL ON)
 
 add_subdirectory("ext/glad")
 add_subdirectory("ext/glfw")
