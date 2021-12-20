@@ -1,12 +1,15 @@
+#define GLFW_INCLUDE_NONE
+
 #include "shader.hpp"
+#include "event_registry.hpp"
 
 #include "glad\glad.h"
-#define GLFW_INCLUDE_NONE
 #include "GLFW\glfw3.h"
 
 #include <iostream>
 
 #define DEBUG
+#define VERBOSE
 
 #ifdef DEBUG
 void GLAPIENTRY glErrorCallback(GLenum source, GLenum type, GLuint id,
@@ -14,20 +17,18 @@ void GLAPIENTRY glErrorCallback(GLenum source, GLenum type, GLuint id,
 {
 	if (type == GL_DEBUG_TYPE_ERROR)
 		std::cout << "GL Error: " << message;
+#ifdef VERBOSE
 	else
 		std::cout << "GL Other: " << message;
+#endif
 }
 #endif
-
-void errorCallback(int error, const char* description);
 
 int main()
 {
 	// Initialize GLFW
 	if (!glfwInit())
 		return EXIT_FAILURE;
-
-	glfwSetErrorCallback(errorCallback);
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -38,6 +39,8 @@ int main()
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
 
+	EventRegistry::init(window);
+
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
 #ifdef DEBUG
@@ -46,7 +49,6 @@ int main()
 #endif
 
 	glViewport(0, 0, 800, 800);
-
 
 
 	Shader shader("shaders/vtest.glsl", "shaders/ftest.glsl");
@@ -74,6 +76,19 @@ int main()
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
+		while (EventRegistry::hasNextEvent())
+		{
+			Event e = EventRegistry::getNext();
+			switch (e.type)
+			{
+			case Event::Type::FRAME_BUFFER_RESIZE:
+				glViewport(0, 0, e.size.x, e.size.y);
+				break;
+			case Event::Type::MOUSE_PRESS:
+				std::cout << e.pos.x << ", " << e.pos.y << '\n';
+				break;
+			}
+		}
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -92,9 +107,4 @@ int main()
 	glfwTerminate();
 
 	return EXIT_SUCCESS;
-}
-
-void errorCallback(int error, const char* description)
-{
-	std::cout << "GLFW: " << description << '\n';
 }
