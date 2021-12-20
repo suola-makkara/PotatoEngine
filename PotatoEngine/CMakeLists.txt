@@ -1,9 +1,18 @@
-﻿# CMakeList.txt : CMake project for PotatoEngine, include source and define
-# project specific logic here.
-#
-cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required (VERSION 3.8)
 
-# Add source to this project's executable.
-add_executable (PotatoEngine  )
+set (LIB
+	glfw
+	glm
+	glad
+)
 
-# TODO: Add tests and install targets if needed.
+set (CPP
+	main.cpp
+)
+
+set (HPP
+	
+)
+
+add_executable (${PROJECT_NAME} ${CPP} ${HPP})
+target_link_libraries(${PROJECT_NAME} ${LIB})

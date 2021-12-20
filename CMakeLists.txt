@@ -1,9 +1,11 @@
-﻿# CMakeList.txt : Top-level CMake project file, do global configuration
-# and include sub-projects here.
-#
-cmake_minimum_required (VERSION 3.8)
-
+﻿cmake_minimum_required (VERSION 3.8)
 project ("PotatoEngine")
 
-# Include sub-projects.
-add_subdirectory ("PotatoEngine")
+set(GLAD_ALL_EXTENSIONS ON)
+set(GLAD_INSTALL ON)
+
+add_subdirectory("ext/glad")
+add_subdirectory("ext/glfw")
+add_subdirectory("ext/glm")
+
+add_subdirectory (${PROJECT_NAME})
