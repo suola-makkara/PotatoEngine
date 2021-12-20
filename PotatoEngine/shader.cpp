@@ -158,7 +158,6 @@ GLuint Shader::compileShader(Type type)
 		static constexpr const int BUFFER_SIZE = 512;
 		char log[BUFFER_SIZE];
 		glGetShaderInfoLog(shaderHandle, BUFFER_SIZE, NULL, log);
-		log[BUFFER_SIZE - 1] = '\0';
 		std::cout << "Error in compiling " << shaderTypeNames[static_cast<int>(type)] << "_SHADER:\n" << log;
 
 		glDeleteShader(shaderHandle);

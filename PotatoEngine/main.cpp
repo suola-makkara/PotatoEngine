@@ -6,6 +6,19 @@
 
 #include <iostream>
 
+#define DEBUG
+
+#ifdef DEBUG
+void GLAPIENTRY glErrorCallback(GLenum source, GLenum type, GLuint id,
+	GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+{
+	if (type == GL_DEBUG_TYPE_ERROR)
+		std::cout << "GL Error: " << message;
+	else
+		std::cout << "GL Other: " << message;
+}
+#endif
+
 void errorCallback(int error, const char* description);
 
 int main()
@@ -27,13 +40,50 @@ int main()
 
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
+#ifdef DEBUG
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(glErrorCallback, 0);
+#endif
+
+	glViewport(0, 0, 800, 800);
+
+
 
 	Shader shader("shaders/vtest.glsl", "shaders/ftest.glsl");
 
 
+	glm::vec3 data[]
+	{
+		{0,0,0},
+		{0,1,0},
+		{1,0,0}
+	};
+
+	GLuint vao;
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		shader.use();
+
+		glBindVertexArray(vao);
+
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		glBindVertexArray(0);
 
 		glfwSwapBuffers(window);
 	}
