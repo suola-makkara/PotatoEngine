@@ -1,8 +1,8 @@
+#include "shader.hpp"
+
 #include "glad\glad.h"
 #define GLFW_INCLUDE_NONE
 #include "GLFW\glfw3.h"
-
-//#include "glm\vec3.hpp"
 
 #include <iostream>
 
@@ -26,6 +26,10 @@ int main()
 	glfwSwapInterval(1);
 
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+
+
+	Shader shader("shaders/vtest.glsl", "shaders/ftest.glsl");
+
 
 	while (!glfwWindowShouldClose(window))
 	{
