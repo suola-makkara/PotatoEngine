@@ -2,15 +2,15 @@
 
 #define GLFW_INCLUDE_NONE
 
+#include "defs.hpp"
+
 #include "shader.hpp"
 #include "event_registry.hpp"
 #include "moving_camera.hpp"
+#include "tesselation_test.hpp"
 
 #include "glad\glad.h"
 #include "GLFW\glfw3.h"
-
-#define DEBUG
-#define VERBOSE
 
 class App
 {
@@ -24,15 +24,17 @@ public:
 private:
 	GLFWwindow* window;
 
-	Shader shader;
+	TesselationTest* tesselationTest;
 	Camera* camera;
-
-	GLuint vbo;
-	GLuint vao;
 
 	void initGLFW(int windowWidth, int windowHeight);
 
 	void initGL();
 
 	void init(int windowWidth, int windowHeight);
+
+#ifdef DEBUG
+	static void GLAPIENTRY glErrorCallback(GLenum source, GLenum type, GLuint id,
+		GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
+#endif
 };

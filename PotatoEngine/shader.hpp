@@ -1,7 +1,7 @@
 #pragma once
 
-#include <glad\glad.h>
-#include <glm\glm.hpp>
+#include "glad\glad.h"
+#include "glm\glm.hpp"
 
 #include <vector>
 #include <string>
@@ -18,6 +18,9 @@ public:
 	Shader& operator=(Shader&& shader) noexcept;
 
 	Shader(const std::string& vertexShaderSourceFile, const std::string& fragmentShaderSourceFile);
+
+	Shader(const std::string& vertexShaderSourceFile, const std::string& tessCtrlShaderSourceFile,
+		const std::string& tessEvalShaderSourceFile, const std::string& fragmentShaderSourceFile);
 
 	Shader(const std::string& computeShaderSourceFile);
 
@@ -54,8 +57,8 @@ private:
 	{
 		VERTEX      = 0,
 		GEOMETRY    = 1,
-		TESS_EVAL   = 2,
-		TESS_CTRL   = 3,
+		TESS_CTRL   = 2,
+		TESS_EVAL   = 3,
 		FRAGMENT    = 4,
 		COMPUTE     = 5
 	};

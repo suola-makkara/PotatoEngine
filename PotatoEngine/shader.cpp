@@ -35,6 +35,17 @@ Shader::Shader(const std::string& vertexShaderSourceFile, const std::string& fra
 	compile();
 }
 
+Shader::Shader(const std::string& vertexShaderSourceFile, const std::string& tessCtrlShaderSourceFile,
+	const std::string& tessEvalShaderSourceFile, const std::string& fragmentShaderSourceFile)
+{
+	sourcesFiles[static_cast<int>(Type::VERTEX)] = vertexShaderSourceFile;
+	sourcesFiles[static_cast<int>(Type::TESS_CTRL)] = tessCtrlShaderSourceFile;
+	sourcesFiles[static_cast<int>(Type::TESS_EVAL)] = tessEvalShaderSourceFile;
+	sourcesFiles[static_cast<int>(Type::FRAGMENT)] = fragmentShaderSourceFile;
+
+	compile();
+}
+
 Shader::Shader(const std::string& computeShaderSourceFile)
 {
 	sourcesFiles[static_cast<int>(Type::COMPUTE)] = computeShaderSourceFile;

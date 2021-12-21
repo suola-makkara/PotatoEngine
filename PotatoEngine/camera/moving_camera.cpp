@@ -50,7 +50,7 @@ glm::mat4 MovingCamera::getProjMat() const
 void MovingCamera::update(float dt)
 {
 	auto dir = getDirection();
-	auto right = glm::cross(up, -dir);
+	auto right = glm::normalize(glm::cross(up, -dir));
 
 	pos += movementSpeed
 		* (static_cast<float>(movement.x) * right

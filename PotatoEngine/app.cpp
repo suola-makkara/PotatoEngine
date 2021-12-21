@@ -2,19 +2,6 @@
 
 #include <iostream>
 
-#ifdef DEBUG
-void GLAPIENTRY glErrorCallback(GLenum source, GLenum type, GLuint id,
-	GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
-{
-	if (type == GL_DEBUG_TYPE_ERROR)
-		std::cout << "GL Error: " << message;
-#ifdef VERBOSE
-	else
-		std::cout << "GL Other: " << message;
-#endif
-}
-#endif
-
 App::App()
 {
 	const int windowWidth = 800;
@@ -26,8 +13,7 @@ App::App()
 
 App::~App()
 {
-	glDeleteBuffers(1, &vbo);
-	glDeleteVertexArrays(1, &vao);
+	delete tesselationTest;
 
 	delete camera;
 
@@ -58,7 +44,7 @@ int App::run()
 				break;
 			case Event::Type::KEY_PRESS:
 				if (e.key == GLFW_KEY_R)
-					shader.compile();
+					tesselationTest->shader.compile();
 				break;
 			}
 
@@ -69,15 +55,7 @@ int App::run()
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		shader.use();
-		shader.set("uView", camera->getViewMat());
-		shader.set("uProj", camera->getProjMat());
-
-		glBindVertexArray(vao);
-
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-
-		glBindVertexArray(0);
+		tesselationTest->render(camera);
 
 		glfwSwapBuffers(window);
 	}
@@ -116,23 +94,40 @@ void App::init(int windowWidth, int windowHeight)
 {
 	EventRegistry::init(window);
 
-	shader = Shader("shaders/vtest.glsl", "shaders/ftest.glsl");
+	tesselationTest = new TesselationTest();
 
-	glm::vec3 data[]
-	{
-		{-1,-1,-5},
-		{0,1,-5},
-		{1,-1,-5}
-	};
-
-	glGenBuffers(1, &vbo);
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	camera = new MovingCamera(glm::vec3(0), static_cast<float>(windowWidth) / windowHeight);
+	camera = new MovingCamera(glm::vec3(0,2,0), static_cast<float>(windowWidth) / windowHeight);
 }
+
+#ifdef DEBUG
+#include <deque>
+void GLAPIENTRY App::glErrorCallback(GLenum source, GLenum type, GLuint id,
+	GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+{
+	static std::deque<std::string> messageDeque;
+
+	if (SUPPRESS_GL_REPEAT > 0)
+	{
+		bool repeat = false;
+		for (const auto& prevMessage : messageDeque)
+			if (prevMessage == message)
+			{
+				repeat = true;
+				break;
+			}
+
+		messageDeque.push_back(message);
+		if (messageDeque.size() > SUPPRESS_GL_REPEAT)
+			messageDeque.pop_front();
+
+		if (repeat) return;
+	}
+
+	if (type == GL_DEBUG_TYPE_ERROR)
+		std::cout << "GL Error: " << message << '\n';
+#ifdef VERBOSE
+	else
+		std::cout << "GL Other: " << message << '\n';
+#endif
+}
+#endif
