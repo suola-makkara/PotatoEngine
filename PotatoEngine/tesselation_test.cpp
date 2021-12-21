@@ -3,15 +3,15 @@
 TesselationTest::TesselationTest()
 {
 	std::vector<glm::vec3> vertices;
-	for (int x = -9; x < 10; x++)
-		for (int z = -9; z < 10; z++)
+	for (int x = -50; x < 50; x++)
+		for (int z = -50; z < 50; z++)
 		{
 			vertices.push_back(glm::vec3(0 + x, 0, 0 + z));
-			vertices.push_back(glm::vec3(1 + x, 0, 0 + z));
-			vertices.push_back(glm::vec3(0 + x, 0, 1 + z));
 			vertices.push_back(glm::vec3(0 + x, 0, 1 + z));
 			vertices.push_back(glm::vec3(1 + x, 0, 0 + z));
+			vertices.push_back(glm::vec3(0 + x, 0, 1 + z));
 			vertices.push_back(glm::vec3(1 + x, 0, 1 + z));
+			vertices.push_back(glm::vec3(1 + x, 0, 0 + z));
 		}
 
 	verts = vertices.size();
@@ -39,7 +39,12 @@ void TesselationTest::render(const Camera* camera)
 
 	glBindVertexArray(vao);
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	glEnable(GL_DEPTH_TEST);
+
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	glDrawArrays(GL_PATCHES, 0, verts);
 
