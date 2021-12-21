@@ -21,7 +21,7 @@ Event EventRegistry::getNext()
 {
 	if (!hasNextEvent())
 	{
-		Event e;
+		Event e{};
 		e.type = Event::Type::UNKNOWN;
 		return e;
 	}
@@ -41,7 +41,7 @@ void EventRegistry::errorCallback(int error, const char* description)
 
 void EventRegistry::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	Event e;
+	Event e{};
 	switch (action)
 	{
 	case GLFW_PRESS:
@@ -64,7 +64,7 @@ void EventRegistry::keyCallback(GLFWwindow* window, int key, int scancode, int a
 
 void EventRegistry::cursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
 {
-	Event e;
+	Event e{};
 	e.type = Event::Type::MOUSE_MOVE;
 	e.pos = glm::dvec2(xpos, ypos);
 
@@ -76,7 +76,7 @@ void EventRegistry::mouseButtonCallback(GLFWwindow* window, int button, int acti
 	double x, y;
 	glfwGetCursorPos(window, &x, &y);
 
-	Event e;
+	Event e{};
 	switch (action)
 	{
 	case GLFW_PRESS:
@@ -98,7 +98,7 @@ void EventRegistry::mouseButtonCallback(GLFWwindow* window, int button, int acti
 
 void EventRegistry::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	Event e;
+	Event e{};
 	e.type = Event::Type::SCROLL;
 	e.scroll = yoffset;
 
@@ -107,7 +107,7 @@ void EventRegistry::scrollCallback(GLFWwindow* window, double xoffset, double yo
 
 void EventRegistry::framebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
-	Event e;
+	Event e{};
 	e.type = Event::Type::FRAME_BUFFER_RESIZE;
 	e.size = glm::ivec2(width, height);
 

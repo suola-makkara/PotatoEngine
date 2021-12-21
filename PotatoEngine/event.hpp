@@ -28,6 +28,6 @@ struct Event
 			glm::dvec2 pos;
 		};
 		glm::ivec2 size;
-		float scroll;
+		double scroll;
 	};
 };
