@@ -25,6 +25,9 @@ public:
 	float near = 0.1f;
 	float far = 100.0f;
 	float fov = 45.0f;
+
+	float mouseSensitiviy = 0.01f;
+	float movementSpeed = 0.5f;
 private:
 	float aspect;
 
@@ -35,7 +38,6 @@ private:
 	float pitch = 0.0f;
 	float yaw = 0.0f;
 
-	float mouseSensitiviy = 0.01f;
 	bool mouseDown = false;
 	glm::vec2 prevMousePos{};
 

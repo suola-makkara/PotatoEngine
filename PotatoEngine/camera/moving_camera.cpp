@@ -52,9 +52,10 @@ void MovingCamera::update(float dt)
 	auto dir = getDirection();
 	auto right = glm::cross(up, -dir);
 
-	pos += static_cast<float>(movement.x) * right
+	pos += movementSpeed
+		* (static_cast<float>(movement.x) * right
 		+ static_cast<float>(movement.y) * up
-		+ static_cast<float>(movement.z) * dir;
+		+ static_cast<float>(movement.z) * dir);
 }
 
 void MovingCamera::handleEvent(const Event& e)

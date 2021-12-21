@@ -17,6 +17,6 @@ foreach(FILE ${ALL_FILES})
 	endif()
 endforeach()
 
-add_executable (${PROJECT_NAME} ${CPP} ${HPP})
+add_executable (${PROJECT_NAME} ${CPP} ${HPP} "app.hpp" "app.cpp")
 target_include_directories(${PROJECT_NAME} PUBLIC ${ALL_DIRS})
 target_link_libraries(${PROJECT_NAME} ${LIB})
