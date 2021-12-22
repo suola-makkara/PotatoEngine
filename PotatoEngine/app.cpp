@@ -96,7 +96,7 @@ void App::init(int windowWidth, int windowHeight)
 
 	tesselationTest = new TesselationTest();
 
-	camera = new MovingCamera(glm::vec3(0,2,0), static_cast<float>(windowWidth) / windowHeight);
+	camera = new MovingCamera(glm::vec3(25,30,25), static_cast<float>(windowWidth) / windowHeight);
 	dynamic_cast<MovingCamera*>(camera)->far = 300.0f;
 }
 
