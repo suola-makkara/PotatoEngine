@@ -4,9 +4,11 @@ layout (triangles, fractional_odd_spacing, ccw) in;
 
 out vec3 normal;
 out vec4 pos;
+out vec3 color;
 
 uniform mat4 uView;
 uniform mat4 uProj;
+uniform vec3 uCameraPos;
 
 uniform sampler2D uNoiseTex;
 uniform sampler2D uNoiseNormalTex;
@@ -20,15 +22,16 @@ void main()
 		+ gl_TessCoord.y * gl_in[1].gl_Position
 		+ gl_TessCoord.z * gl_in[2].gl_Position;
 
+	float lod = max(0, log2(length(pos.xyz - uCameraPos) + 1) - 3);
+
 	vec2 texCoord = vec2(pos.x * uTextureFreq, pos.z * uTextureFreq);
 
-	pos.y = texture(uNoiseTex, texCoord).x * uHeightScale;
+	pos.y = textureLod(uNoiseTex, texCoord, lod).x * uHeightScale;
+//	float dydx = textureLod(uNoiseTex, texCoord + vec2(uTextureFreq * 0.01, 0.0), 0).x * uHeightScale - pos.y;
+//	float dydz = textureLod(uNoiseTex, texCoord + vec2(0.0, uTextureFreq * 0.01), 0).x * uHeightScale - pos.y;
+//	normal = normalize(cross(vec3(0.0, dydz, 0.01), vec3(0.01, dydx, 0.0)));
 	
-	// sin(pos.x) + sin(pos.z) + sin(3 * pos.x) + sin(3 * pos.z);
-
-	normal = normalize(texture(uNoiseNormalTex, texCoord).xyz - 0.5);
+	normal = normalize(textureLod(uNoiseNormalTex, texCoord, lod).xyz - 0.5);
 	
-	//normalize(cross(vec3(0, cos(pos.z) + 3 * cos(3 * pos.x), 1), vec3(1, cos(pos.x) + 3 * cos(3 * pos.z), 0)));
-
 	gl_Position = uProj * uView * pos;
 }

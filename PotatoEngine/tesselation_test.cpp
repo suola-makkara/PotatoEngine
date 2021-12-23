@@ -1,6 +1,9 @@
 #include "tesselation_test.hpp"
 
 #include "glm\gtc\noise.hpp"
+#include "glm\gtc\random.hpp"
+
+#include <iostream>
 
 TesselationTest::TesselationTest()
 {
@@ -31,63 +34,119 @@ TesselationTest::TesselationTest()
 	shader = Shader("shaders/tess/vtesstest.glsl", "shaders/tess/ctesstest.glsl",
 		"shaders/tess/etesstest.glsl", "shaders/tess/ftesstest.glsl");
 
-	static const int LAYERS = 5;
-	static const float scales[LAYERS]{ 640.0f, 320.0f, 160.0f, 80.0f, 40.0f };
-	float mult[LAYERS];
-	float sum = 0;
-	for (int i = 0; i < LAYERS; i++) sum += glm::pow(scales[i], 0.6f);
-	for (int i = 0; i < LAYERS; i++) mult[i] = glm::pow(scales[i], 0.6f) / sum;
-
 	glGenTextures(1, &noiseTex);
 	glGenTextures(1, &noiseNormalTex);
 	std::vector<float> pixels(texSize * texSize);
-	for (int i = 0; i < LAYERS; i++)
+
+	static const int OCTAVES = 10;
+	static const float BASE_OCTAVE = 256.0f;
+	static const float BASE_MULT = 16.0f;
+	float currentOctave = BASE_OCTAVE;
+	float currentMult = BASE_MULT;
+	float max = -FLT_MAX;
+	float min = FLT_MAX;
+	for (int oct = 0; oct < OCTAVES; oct++)
+	{
+		float freq = currentOctave + glm::linearRand(-currentOctave / 16.0f, currentOctave / 16.0f);
+
+		float sampleZ = glm::linearRand(0.0f, 1000.0f);
+
 		for (int x = 0; x < texSize; x++)
-		{
-			//float sx = x < 25 ? x / 25.0f : x >= texSize - 25 ? (texSize - x - 1) / 25.0f : 1.0f;
 			for (int y = 0; y < texSize; y++)
 			{
-				//float sy = y < 25 ? y / 25.0f : y >= texSize - 25 ? (texSize - y - 1) / 25.0f : 1.0f;
-				pixels[x + y * texSize] += mult[i] * ((glm::perlin(glm::vec3(x / scales[i], y / scales[i], i)) + 1.0f) / 2.0f);
+				pixels[x + y * texSize] += currentMult * glm::perlin(glm::vec3(x / freq, y / freq, sampleZ));
+				if (oct == OCTAVES - 1)
+				{
+					float val = pixels[x + y * texSize];
+					min = glm::min(min, val);
+					max = glm::max(max, val);
+				}
 			}
-		}
+
+		currentMult /= 2.0f;
+		currentOctave /= 2.0f;
+	}
+
+	for (int x = 0; x < texSize; x++)
+		for (int y = 0; y < texSize; y++)
+			pixels[x + y * texSize] = (pixels[x + y * texSize] - min) / (max - min);
 
 	glBindTexture(GL_TEXTURE_2D, noiseTex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, texSize, texSize, NULL, GL_RED, GL_FLOAT, pixels.data());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
-	std::vector<glm::vec3> normalPixels(texSize * texSize);
-	float m = heightScale * texSize * texFreq;
-	for (int x = 1; x < texSize - 1; x++)
-		for (int y = 1; y < texSize - 1; y++)
-		{
-			float px = pixels[x + 1 + y * texSize];
-			float mx = pixels[x - 1 + y * texSize];
-			float pz = pixels[x + (y + 1) * texSize];
-			float mz = pixels[x + (y - 1) * texSize];
-
-			float pxpz = pixels[x + 1 + (y + 1) * texSize];
-			float pxmz = pixels[x + 1 + (y - 1) * texSize];
-			float mxmz = pixels[x - 1 + (y - 1) * texSize];
-			float mxpz = pixels[x - 1 + (y + 1) * texSize];
-
-			glm::vec3 dydx = glm::vec3(1.0f, (2.0f * px - 2.0f * mx + pxpz + pxmz - mxpz - mxmz) * m / 8.0f, 0.0f);
-			glm::vec3 dydz = glm::vec3(0.0f, (2.0f * pz - 2.0f * mz + pxpz + mxpz - pxmz - mxmz) * m / 8.0f, 1.0f);
-
-			glm::vec3 normal = glm::normalize(glm::cross(dydz, dydx));
-
-			normalPixels[x + y * texSize] = normal / 2.0f + 0.5f;
-		}
 
 	glBindTexture(GL_TEXTURE_2D, noiseNormalTex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texSize, texSize, NULL, GL_RGB, GL_FLOAT, normalPixels.data());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+	// Generate mipmaps
+	int size = texSize;
+	std::vector<float> prevLevel = std::move(pixels);
+	std::vector<float> nextLevel;
+	int level = 0;
+	while (true)
+	{
+		glBindTexture(GL_TEXTURE_2D, noiseTex);
+		glTexImage2D(GL_TEXTURE_2D, level, GL_R16F, size, size, NULL, GL_RED, GL_FLOAT, prevLevel.data());
+
+		// calculate normals
+		std::vector<glm::vec3> normalPixels(size * size);
+		float m = heightScale * size * texFreq;
+		for (int x = 1; x < size - 1; x++)
+			for (int y = 1; y < size - 1; y++)
+			{
+				float px = prevLevel[x + 1 + y * size];
+				float mx = prevLevel[x - 1 + y * size];
+				float pz = prevLevel[x + (y + 1) * size];
+				float mz = prevLevel[x + (y - 1) * size];
+
+				float pxpz = prevLevel[x + 1 + (y + 1) * size];
+				float pxmz = prevLevel[x + 1 + (y - 1) * size];
+				float mxmz = prevLevel[x - 1 + (y - 1) * size];
+				float mxpz = prevLevel[x - 1 + (y + 1) * size];
+
+				glm::vec3 dydx = glm::vec3(1.0f, (2.0f * px - 2.0f * mx + pxpz + pxmz - mxpz - mxmz) * m / 8.0f, 0.0f);
+				glm::vec3 dydz = glm::vec3(0.0f, (2.0f * pz - 2.0f * mz + pxpz + mxpz - pxmz - mxmz) * m / 8.0f, 1.0f);
+
+				glm::vec3 normal = glm::normalize(glm::cross(dydz, dydx));
+
+				normalPixels[x + y * size] = normal / 2.0f + 0.5f;
+			}
+		glBindTexture(GL_TEXTURE_2D, noiseNormalTex);
+		glTexImage2D(GL_TEXTURE_2D, level, GL_RGB, size, size, NULL, GL_RGB, GL_FLOAT, normalPixels.data());
+
+		size /= 2;
+		if (size < 1)
+			break;
+
+		nextLevel = std::vector<float>(size * size);
+
+		for (int x = 0; x < size; x++)
+			for (int y = 0; y < size; y++)
+			{
+				glm::vec4 s = glm::vec4(
+					  prevLevel[2 * x + 2 * y * 2 * size]
+					, prevLevel[(2 * x + 1) + 2 * y * 2 * size]
+					, prevLevel[2 * x + (2 * y + 1) * 2 * size]
+					, prevLevel[(2 * x + 1) + (2 * y + 1) * 2 * size]);
+
+				float mean = 0.25f * (s.x + s.y + s.z + s.w);
+				float min = glm::min(glm::min(s.x, s.y), glm::min(s.z, s.w));
+				float max = glm::max(glm::max(s.x, s.y), glm::max(s.z, s.w));
+
+				if (mean > 0.5f)
+					nextLevel[x + y * size] = glm::mix(mean, max, (mean - 0.5f) / 0.5f);
+				else
+					nextLevel[x + y * size] = glm::mix(mean, min, (mean - 0.5f) / -0.5f);
+			}
+
+		prevLevel = std::move(nextLevel);
+		level++;
+	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }

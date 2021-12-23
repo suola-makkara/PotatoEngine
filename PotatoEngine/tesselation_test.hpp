@@ -24,7 +24,7 @@ private:
 	GLuint noiseTex;
 	GLuint noiseNormalTex;
 
-	int texSize = 1000;
+	int texSize = 1024;
 	float texFreq = 1.0f / 100.0f;
 	float heightScale = 40.0f;
 
