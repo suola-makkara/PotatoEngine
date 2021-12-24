@@ -28,7 +28,7 @@ void main()
 	vec3 gray = vec3(0.2, 0.2, 0.25);
 
 	float amb = 0.2;
-	vec3 diff = vec3(0.2, 0.2, 0.4);//(normal + 1) / 2;// vec3(pos.y / uHeightScale);//mix(gray, green, smoothstep(0.6, 0.9, n.y));
+	vec3 diff = vec3(0.6, 0.6, 0.8);//(normal + 1) / 2;// vec3(pos.y / uHeightScale);//mix(gray, green, smoothstep(0.6, 0.9, n.y));
 	float spec = dot(n, l) < 0 ? 0 : pow(max(0.0, dot(h, n)), 16.0);
 
 	//fColor = vec4(color, 1);

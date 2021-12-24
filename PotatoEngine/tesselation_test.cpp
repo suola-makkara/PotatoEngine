@@ -1,4 +1,5 @@
 #include "tesselation_test.hpp"
+#include "simplex.hpp"
 
 #include "glm\gtc\noise.hpp"
 #include "glm\gtc\random.hpp"
@@ -38,8 +39,10 @@ TesselationTest::TesselationTest()
 	glGenTextures(1, &noiseNormalTex);
 	std::vector<float> pixels(texSize * texSize);
 
+	Simplex::init();
+
 	static const int OCTAVES = 10;
-	static const float BASE_OCTAVE = 256.0f;
+	static const float BASE_OCTAVE = 1024.0f;
 	static const float BASE_MULT = 16.0f;
 	float currentOctave = BASE_OCTAVE;
 	float currentMult = BASE_MULT;
@@ -49,12 +52,14 @@ TesselationTest::TesselationTest()
 	{
 		float freq = currentOctave + glm::linearRand(-currentOctave / 16.0f, currentOctave / 16.0f);
 
-		float sampleZ = glm::linearRand(0.0f, 1000.0f);
+		//float sampleZ = glm::linearRand(0.0f, 1000.0f);
+
+		int seed = std::hash<int>{}(oct);
 
 		for (int x = 0; x < texSize; x++)
 			for (int y = 0; y < texSize; y++)
 			{
-				pixels[x + y * texSize] += currentMult * glm::perlin(glm::vec3(x / freq, y / freq, sampleZ));
+				pixels[x + y * texSize] += currentMult * Simplex::simplex2D(glm::vec2(x / freq, y / freq), seed);
 				if (oct == OCTAVES - 1)
 				{
 					float val = pixels[x + y * texSize];
@@ -66,6 +71,8 @@ TesselationTest::TesselationTest()
 		currentMult /= 2.0f;
 		currentOctave /= 2.0f;
 	}
+
+	std::cout << min << ", " << max << '\n';
 
 	for (int x = 0; x < texSize; x++)
 		for (int y = 0; y < texSize; y++)
