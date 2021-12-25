@@ -1,6 +1,8 @@
 #include "tesselation_test.hpp"
 #include "simplex.hpp"
 
+#include "GLFW\glfw3.h"
+
 #include "glm\gtc\noise.hpp"
 #include "glm\gtc\random.hpp"
 
@@ -52,14 +54,14 @@ TesselationTest::TesselationTest()
 	{
 		float freq = currentOctave + glm::linearRand(-currentOctave / 16.0f, currentOctave / 16.0f);
 
-		//float sampleZ = glm::linearRand(0.0f, 1000.0f);
-
 		int seed = std::hash<int>{}(oct);
+
+		auto pixelsn = Simplex::simplex2Dgrid(glm::vec2(0), 1.0f / freq, texSize - 1, seed);
 
 		for (int x = 0; x < texSize; x++)
 			for (int y = 0; y < texSize; y++)
 			{
-				pixels[x + y * texSize] += currentMult * Simplex::simplex2D(glm::vec2(x / freq, y / freq), seed);
+				pixels[x + y * texSize] += currentMult * pixelsn[x + y * texSize];
 				if (oct == OCTAVES - 1)
 				{
 					float val = pixels[x + y * texSize];
@@ -71,8 +73,6 @@ TesselationTest::TesselationTest()
 		currentMult /= 2.0f;
 		currentOctave /= 2.0f;
 	}
-
-	std::cout << min << ", " << max << '\n';
 
 	for (int x = 0; x < texSize; x++)
 		for (int y = 0; y < texSize; y++)

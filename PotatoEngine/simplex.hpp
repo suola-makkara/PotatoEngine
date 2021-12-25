@@ -2,10 +2,14 @@
 
 #include "glm/glm.hpp"
 
+#include <vector>
+
 class Simplex
 {
 public:
-	static float simplex2D(const glm::vec2& p, int seed);
+	static float simplex2D(const glm::vec2& ps, int seed);
+
+	static std::vector<float> simplex2Dgrid(const glm::vec2& ps, float step, int steps, int seed);
 
 	static void init();
 
