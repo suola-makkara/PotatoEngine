@@ -115,6 +115,9 @@ bool Shader::compile()
 
 void Shader::set(const std::string& uniform, float v) { glUniform1f(location(uniform), v); }
 void Shader::set(const std::string& uniform, int i) { glUniform1i(location(uniform), i); };
+void Shader::set(const std::string& uniform, const glm::ivec2& v) { glUniform2iv(location(uniform), 1, glm::value_ptr(v)); };
+void Shader::set(const std::string& uniform, const glm::ivec3& v) { glUniform3iv(location(uniform), 1, glm::value_ptr(v)); };
+void Shader::set(const std::string& uniform, const glm::ivec4& v) { glUniform4iv(location(uniform), 1, glm::value_ptr(v)); };
 void Shader::set(const std::string& uniform, const glm::vec2& v) { glUniform2fv(location(uniform), 1, glm::value_ptr(v)); };
 void Shader::set(const std::string& uniform, const glm::vec3& v) { glUniform3fv(location(uniform), 1, glm::value_ptr(v)); };
 void Shader::set(const std::string& uniform, const glm::vec4& v) { glUniform4fv(location(uniform), 1, glm::value_ptr(v)); };

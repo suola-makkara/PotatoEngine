@@ -36,6 +36,9 @@ public:
 
 	void set(const std::string& uniform, float v);
 	void set(const std::string& uniform, int i);
+	void set(const std::string& uniform, const glm::ivec2& v);
+	void set(const std::string& uniform, const glm::ivec3& v);
+	void set(const std::string& uniform, const glm::ivec4& v);
 	void set(const std::string& uniform, const glm::vec2& v);
 	void set(const std::string& uniform, const glm::vec3& v);
 	void set(const std::string& uniform, const glm::vec4& v);

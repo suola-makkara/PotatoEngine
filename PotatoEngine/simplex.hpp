@@ -16,4 +16,6 @@ public:
 private:
 	static const int GRADS_2D = 83;
 	static glm::vec2 grad2D[GRADS_2D];
+
+	static bool initialized;
 };

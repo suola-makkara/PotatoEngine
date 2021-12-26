@@ -4,11 +4,6 @@ layout (vertices = 3) out;
 
 uniform vec3 uCameraPos;
 
-//float lerp(float mi, float ma, float t)
-//{
-//	return (t - mi) / (ma - mi);
-//}
-
 void main()
 {
 	vec3 p0 = gl_in[0].gl_Position.xyz;
@@ -19,9 +14,9 @@ void main()
 	vec3 m1 = 0.5 * (p2 + p0);
 	vec3 m2 = 0.5 * (p0 + p1);
 
-	float d0 = 200.0 / (1.0 + length(uCameraPos - m0));
-	float d1 = 200.0 / (1.0 + length(uCameraPos - m1));
-	float d2 = 200.0 / (1.0 + length(uCameraPos - m2));
+	float d0 = 50.0 / (1.0 + length(uCameraPos - m0));
+	float d1 = 50.0 / (1.0 + length(uCameraPos - m1));
+	float d2 = 50.0 / (1.0 + length(uCameraPos - m2));
 
 	gl_TessLevelOuter[0] = d0;
 	gl_TessLevelOuter[1] = d1;
