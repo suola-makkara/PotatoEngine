@@ -34,5 +34,5 @@ void main()
 	//fColor = vec4(color, 1);
 	//fColor = vec4(amb * diff + (0.1 * spec + diff) * max(0, dot(n, l)), 1);
 
-	fColor = vec4(vec3(0.4, 0.2, 0.5), 1.0);
+	fColor = vec4(vec3(0.4, (pos.y + 10.0)/20.0, 0.5), 1.0);
 }

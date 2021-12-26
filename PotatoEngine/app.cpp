@@ -52,6 +52,20 @@ int App::run()
 		}
 
 		camera->update(static_cast<float>(dt));
+		tesselationTest->update(camera);
+
+#ifdef VIEW_VIDEO_MEMORY
+		static int prev = 0;
+		int totalAvailable, currentlyAvailable;
+		glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &totalAvailable);
+		glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &currentlyAvailable);
+		if (currentlyAvailable != prev)
+		{
+			prev = currentlyAvailable;
+			std::cout << "VIDEO MEMORY AVAILABLE: " << currentlyAvailable / 1000000.0f << "/" << totalAvailable / 1000000.0f
+				<< " GB  " << 100.0f * currentlyAvailable / totalAvailable << "%\n";
+		}
+#endif
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -98,6 +112,7 @@ void App::init(int windowWidth, int windowHeight)
 
 	camera = new MovingCamera(glm::vec3(25,30,25), static_cast<float>(windowWidth) / windowHeight);
 	dynamic_cast<MovingCamera*>(camera)->far = 300.0f;
+	dynamic_cast<MovingCamera*>(camera)->movementSpeed = 1.0f;
 }
 
 #ifdef DEBUG

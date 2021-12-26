@@ -45,6 +45,7 @@ float Simplex::simplex2D(const glm::vec2& ps, int seed)
 	return C * glm::dot(d, g);
 }
 
+// NOT STABLE
 std::vector<float> Simplex::simplex2Dgrid(const glm::vec2& ps, float step, int steps, int seed)
 {
 	assert(initialized);
