@@ -40,6 +40,8 @@ TesselationTest::TesselationTest()
 
 	Simplex::init();
 
+	chunkUpdateThread = std::thread(&TesselationTest::chunkGenerator, this);
+
 	/*
 	
 	//// Generate mipmaps
@@ -84,6 +86,15 @@ TesselationTest::TesselationTest()
 	*/
 }
 
+TesselationTest::~TesselationTest()
+{
+	stopChunkGenerator = true;
+	chunkUpdateThread.join();
+
+	for (auto& chunk : chunks)
+		delete chunk.second;
+}
+
 void TesselationTest::render(const Camera* camera)
 {
 	shader.use();
@@ -116,7 +127,9 @@ void TesselationTest::update(const Camera* camera)
 
 	glm::ivec2 cameraChunk = glm::ivec2(glm::floor(glm::vec2(cameraPos.x, cameraPos.z) / chunkSize));
 
-	static const int ext = 4;
+	static const int ext = 8;
+
+	chunkMtx.lock();
 
 	for (int x = cameraChunk.x - ext; x <= cameraChunk.x + ext; x++)
 		for (int y = cameraChunk.y - ext; y <= cameraChunk.y + ext; y++)
@@ -127,72 +140,106 @@ void TesselationTest::update(const Camera* camera)
 
 	for (auto it = chunks.begin(); it != chunks.end();)
 	{
-		auto& chunk = it->second;
+		auto chunk = it->second;
 
-		glm::vec2 chunkCenter = chunk.pos + 0.5f * chunkSize;
+		glm::vec2 chunkCenter = chunk->pos + 0.5f * chunkSize;
 		float chunkDist = glm::length(cameraPos - (glm::vec3(chunkCenter.x, 0.0f, chunkCenter.y)));
-		int targetLod = static_cast<int>(glm::floor(chunkDist / (1.5f * chunkSize)));
+		int targetLod = static_cast<int>(glm::floor(chunkDist / (2.0f * chunkSize)));
+		targetLod = glm::min(maxLod, glm::max(0, targetLod));
 
 		if (it->first.x < cameraChunk.x - ext || it->first.x > cameraChunk.x + ext
 			|| it->first.y < cameraChunk.y - ext || it->first.y > cameraChunk.y + ext)
 		{
-			destroyChunk(chunk);
-			it = chunks.erase(it);
+			targetLod = -1;
 		}
-		else
+
+		chunk->sync.mtx.lock();
+
+		if (chunk->sync.targetLod != targetLod)
 		{
-			while (chunk.lod > targetLod)
-				generateChunkLod(chunk);
+			chunk->sync.targetLod = targetLod;
+			chunk->sync.ready = false;
+			chunkUpdateQueue.push(chunk->gridPos);
+		}
 
-			while (chunk.lod < targetLod && chunk.lod < maxLod)
+		chunk->sync.mtx.unlock();
+
+		if (chunk->sync.ready && !loadReadyChunk(chunk))
+			it = chunks.erase(it);
+		else
+			it++;
+	}
+
+	chunkMtx.unlock();
+}
+
+void TesselationTest::chunkGenerator()
+{
+	while (true)
+	{
+		chunkMtx.lock();
+		while (!chunkUpdateQueue.empty() && !stopChunkGenerator)
+		{
+			glm::ivec2 chunkPos = chunkUpdateQueue.front();
+			chunkUpdateQueue.pop();
+			if (chunks.find(chunkPos) == chunks.end())
+				continue;
+
+			Chunk* chunk = chunks[chunkPos];
+
+			chunkMtx.unlock();
+
+			chunk->sync.mtx.lock();
+			int currentLod = chunk->sync.lodState;
+			int targetLod = chunk->sync.targetLod;
+			if (currentLod == targetLod || targetLod == -1)
 			{
-				glBindTexture(GL_TEXTURE_2D, chunk.noiseTex);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, chunk.lod + 1);
-				glInvalidateTexImage(chunk.noiseTex, chunk.lod);
-				glBindTexture(GL_TEXTURE_2D, 0);
+				chunk->sync.ready = true;
+				chunk->sync.mtx.unlock();
+				chunkMtx.lock();
+				continue;
+			}
+			chunk->sync.mtx.unlock();
 
-				chunk.lod += 1;
-				chunk.lods.pop();
+			if (targetLod > currentLod)
+			{
+				for (int lod = currentLod; lod < targetLod; lod++)
+					chunk->lods[lod].clear();
+			}
+			else if (targetLod < currentLod)
+			{
+				for (int lod = currentLod - 1; lod >= targetLod; lod--)
+				{
+					const auto& prev = lod == maxLod ? std::vector<float>() : chunk->lods[lod + 1];
+					chunk->lods[lod] = std::move(generateChunkData(chunk->gridPos, lod, prev));
+				}
 			}
 
-			it++;
+			chunk->sync.lodState = targetLod;
+
+			chunk->sync.mtx.lock();
+			if (chunk->sync.targetLod == targetLod)
+				chunk->sync.ready = true;
+			chunk->sync.mtx.unlock();
+
+			chunkMtx.lock();
 		}
+		chunkMtx.unlock();
+
+		if (stopChunkGenerator)
+			break;
 	}
 }
 
-TesselationTest::Chunk TesselationTest::generateChunk(const glm::ivec2 gridPos)
+std::vector<float> TesselationTest::generateChunkData(const glm::ivec2& pos, int lod, const std::vector<float>& prev)
 {
-	Chunk chunk;
-	chunk.gridPos = gridPos;
-	chunk.pos = chunkSize * glm::vec2(gridPos);
-
-	glGenTextures(1, &chunk.noiseTex);
-	glBindTexture(GL_TEXTURE_2D, chunk.noiseTex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLod);
-
-	generateChunkLod(chunk);
-
-	return chunk;
-}
-
-void TesselationTest::generateChunkLod(Chunk& chunk)
-{
-	if (!chunk.lods.empty() && chunk.lod == 0)
-		return;
-
 	// generate next lod map
-	const int nextLod = chunk.lods.empty() ? maxLod : chunk.lod - 1;
-
-	const float freq = baseFreq / static_cast<float>(glm::pow(2, nextLod));
-	const float amp = baseAmp * static_cast<float>(glm::pow(1.7f, nextLod) / glm::pow(1.7f, maxLod));
-	const int currentTexSize = baseTexSize / static_cast<int>(glm::pow(2, nextLod));
+	const float freq = baseFreq / static_cast<float>(glm::pow(2, lod));
+	const float amp = baseAmp * static_cast<float>(glm::pow(1.7f, lod) / glm::pow(1.7f, maxLod));
+	const int currentTexSize = baseTexSize / static_cast<int>(glm::pow(2, lod));
 
 	const float texelSize = chunkSize / (currentTexSize - 2);
-	const glm::vec2 sampleStart = freq * (chunk.pos - texelSize / 2.0f);
+	const glm::vec2 sampleStart = freq * (glm::vec2(pos) * chunkSize - texelSize / 2.0f);
 	const float sampleWidth = freq * (texelSize);
 
 	std::vector<float> data;
@@ -206,38 +253,136 @@ void TesselationTest::generateChunkLod(Chunk& chunk)
 		for (int y = 0; y < currentTexSize; y++)
 		{
 			data[x + y * currentTexSize] *= amp;
-			if (!chunk.lods.empty())
-				data[x + y * currentTexSize] += interp(glm::ivec2(x, y), chunk.lods.top(), currentTexSize / 2);
+			if (!prev.empty())
+				data[x + y * currentTexSize] += interp(glm::ivec2(x, y), prev, currentTexSize / 2);
 		}
 
-	glBindTexture(GL_TEXTURE_2D, chunk.noiseTex);
+	return data;
+}
+
+bool TesselationTest::loadReadyChunk(Chunk* chunk)
+{
+	// Check if chunk should be destroyed
+	if (chunk->sync.targetLod == -1)
+	{
+		destroyChunk(chunk);
+		return false;
+	}
+
+	if (chunk->sync.targetLod < chunk->lod || chunk->lod == INT_MAX)
+	{
+		if (chunk->lod == INT_MAX) chunk->lod = maxLod + 1;
+
+		glBindTexture(GL_TEXTURE_2D, chunk->noiseTex);
+		for (int lod = chunk->lod - 1; lod >= chunk->sync.targetLod; lod--)
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, lod);
+			const int texSize = baseTexSize / static_cast<int>(glm::pow(2, lod));
+			glTexImage2D(GL_TEXTURE_2D, lod, GL_R16F, texSize, texSize, NULL, GL_RED, GL_FLOAT, chunk->lods[lod].data());
+		}
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	else if (chunk->sync.targetLod > chunk->lod)
+	{
+		glBindTexture(GL_TEXTURE_2D, chunk->noiseTex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, chunk->sync.targetLod);
+
+		for (int lod = chunk->lod; lod < chunk->sync.targetLod; lod++)
+			glInvalidateTexImage(chunk->noiseTex, lod);
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	chunk->lod = chunk->sync.targetLod;
+	return true;
+}
+
+TesselationTest::Chunk* TesselationTest::generateChunk(const glm::ivec2 gridPos)
+{
+	Chunk* chunk = new Chunk();
+	chunk->gridPos = gridPos;
+	chunk->pos = chunkSize * glm::vec2(gridPos);
+	chunk->lod = INT_MAX;
+	chunk->sync.targetLod = INT_MAX;
+	chunk->sync.lodState = maxLod + 1;
+	chunk->sync.ready = false;
+
+	glGenTextures(1, &chunk->noiseTex);
+	glBindTexture(GL_TEXTURE_2D, chunk->noiseTex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLod);
+
+	return chunk;
+}
+
+void TesselationTest::generateChunkLod(Chunk* chunk)
+{
+	/*
+	if (!chunk->lods.empty() && chunk->lod == 0)
+		return;
+
+	// generate next lod map
+	const int nextLod = chunk->lods.empty() ? maxLod : chunk->lod - 1;
+
+	const float freq = baseFreq / static_cast<float>(glm::pow(2, nextLod));
+	const float amp = baseAmp * static_cast<float>(glm::pow(1.7f, nextLod) / glm::pow(1.7f, maxLod));
+	const int currentTexSize = baseTexSize / static_cast<int>(glm::pow(2, nextLod));
+
+	const float texelSize = chunkSize / (currentTexSize - 2);
+	const glm::vec2 sampleStart = freq * (chunk->pos - texelSize / 2.0f);
+	const float sampleWidth = freq * (texelSize);
+
+	std::vector<float> data;
+	data.reserve(currentTexSize * currentTexSize);
+	for (int y = 0; y < currentTexSize; y++)
+		for (int x = 0; x < currentTexSize; x++)
+			data.push_back(Simplex::simplex2D(sampleStart + sampleWidth * glm::vec2(x, y), 0));
+
+	// interpolate previous map
+	for (int x = 0; x < currentTexSize; x++)
+		for (int y = 0; y < currentTexSize; y++)
+		{
+			data[x + y * currentTexSize] *= amp;
+			if (!chunk->lods.empty())
+				data[x + y * currentTexSize] += interp(glm::ivec2(x, y), chunk->lods.top(), currentTexSize / 2);
+		}
+
+	glBindTexture(GL_TEXTURE_2D, chunk->noiseTex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, nextLod);
 	glTexImage2D(GL_TEXTURE_2D, nextLod, GL_R16F, currentTexSize, currentTexSize, NULL, GL_RED, GL_FLOAT, data.data());
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	chunk.lods.push(std::move(data));
-	chunk.lod = nextLod;
+	chunk->lods.push(std::move(data));
+	chunk->lod = nextLod;
+	*/
 }
 
-void TesselationTest::renderChunk(const Chunk& chunk)
+void TesselationTest::renderChunk(const Chunk* chunk)
 {
-	shader.set("uChunkPos", chunk.pos);
+	if (chunk->lod == INT_MAX)
+		return;
+
+	shader.set("uChunkPos", chunk->pos);
 	shader.set("uChunkSize", chunkSize);
 	shader.set("uNoiseTex", 0);
-	shader.set("uBaseLod", chunk.lod);
+	shader.set("uBaseLod", chunk->lod);
 	shader.set("uMaxLod", maxLod);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, chunk.noiseTex);
+	glBindTexture(GL_TEXTURE_2D, chunk->noiseTex);
 
 	glDrawArrays(GL_PATCHES, 0, verts);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void TesselationTest::destroyChunk(Chunk& chunk)
+void TesselationTest::destroyChunk(Chunk* chunk)
 {
-	glDeleteTextures(1, &chunk.noiseTex);
+	glDeleteTextures(1, &chunk->noiseTex);
+	delete chunk;
 }
 
 float TesselationTest::interp(const glm::ivec2& pos, const std::vector<float>& tex, int texSize)
