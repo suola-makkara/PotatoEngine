@@ -13,26 +13,24 @@ const vec3 lightPos = vec3(0,4,0);
 
 void main()
 {
-//	vec3 l = normalize(vec3(1, 1, 1));
-//	vec3 n = normalize(normal);
-//
-//	vec3 v = normalize(uCameraPos - pos.xyz);
-//
-//	vec3 h = normalize(v + l);
-//
-//	
-//
-//	float d = length(lightPos - pos.xyz);
-//
-//	vec3 green = vec3(0.8, 0.8, 0.82);
-//	vec3 gray = vec3(0.2, 0.2, 0.25);
-//
-//	float amb = 0.2;
-//	vec3 diff = vec3(0.6, 0.6, 0.8);//(normal + 1) / 2;// vec3(pos.y / uHeightScale);//mix(gray, green, smoothstep(0.6, 0.9, n.y));
-//	float spec = dot(n, l) < 0 ? 0 : pow(max(0.0, dot(h, n)), 16.0);
-//
-	//fColor = vec4(color, 1);
-	//fColor = vec4(amb * diff + (0.1 * spec + diff) * max(0, dot(n, l)), 1);
+	vec3 l = normalize(vec3(0.2, 1, 0.4));
+	vec3 n = normalize(normal);
 
-	fColor = vec4(vec3(0.4, (pos.y + 10.0)/20.0, 0.5), 1.0);
+	vec3 v = normalize(uCameraPos - pos.xyz);
+
+	vec3 h = normalize(v + l);
+
+	float d = length(lightPos - pos.xyz);
+
+	vec3 green = vec3(0.8, 0.8, 0.82);
+	vec3 gray = vec3(0.2, 0.2, 0.25);
+
+	float amb = 0.2;
+	vec3 diff = vec3(0.6, 0.6, 0.8);
+	float spec = dot(n, l) < 0 ? 0 : pow(max(0.0, dot(h, n)), 16.0);
+
+	fColor = vec4(amb * diff + (0.1 * spec + diff) * max(0, dot(n, l)), 1);
+
+	//fColor = vec4(vec3(0.8, 0.5, pow((-pos.y + 80.0)/120.0,2)), 1.0);
+	//fColor = vec4((normal + 1.0) / 2.0, 1.0);
 }

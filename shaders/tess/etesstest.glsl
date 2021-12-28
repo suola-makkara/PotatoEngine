@@ -13,12 +13,10 @@ uniform vec2 uChunkPos;
 uniform float uChunkSize;
 
 uniform sampler2D uNoiseTex;
+uniform sampler2D uNormalTex;
+
 uniform int uBaseLod;
 uniform int uMaxLod;
-//uniform sampler2D uNoiseNormalTex;
-
-//uniform float uTextureFreq;
-//uniform float uHeightScale;
 
 void main()
 {
@@ -38,10 +36,14 @@ void main()
 	vec2 texCoord0 = ((texSize0 - 2.0) * vec2(pos.x - uChunkPos.x, pos.z - uChunkPos.y) / uChunkSize + 1.0) / texSize0;
 	vec2 texCoord1 = ((texSize1 - 2.0) * vec2(pos.x - uChunkPos.x, pos.z - uChunkPos.y) / uChunkSize + 1.0) / texSize1;
 
-	float h0 = textureLod(uNoiseTex, texCoord0, lod0 - uBaseLod).x * 5.0;
-	float h1 = textureLod(uNoiseTex, texCoord1, lod1 - uBaseLod).x * 5.0;
+	float h0 = textureLod(uNoiseTex, texCoord0, lod0 - uBaseLod).x;
+	float h1 = textureLod(uNoiseTex, texCoord1, lod1 - uBaseLod).x;
+
+	vec3 n0 = normalize(textureLod(uNormalTex, texCoord0, lod0 - uBaseLod).xyz - 0.5);
+	vec3 n1 = normalize(textureLod(uNormalTex, texCoord1, lod1 - uBaseLod).xyz - 0.5);
 
 	pos.y = mix(h0, h1, lod - floor(lod));
+	normal = normalize(mix(n0, n1, lod - floor(lod)));
 	
 	gl_Position = uProj * uView * pos;
 }

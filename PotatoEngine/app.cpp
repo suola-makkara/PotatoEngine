@@ -31,7 +31,21 @@ int App::run()
 		double dt = tempTime - time;
 		time = tempTime;
 
-		//std::cout << "fps: " << static_cast<int>(glm::round(1.0 / dt)) << '\n';
+#ifdef VIEW_FPS
+		static int count = 0;
+		static double sum = 0.0;
+		if (count < 60)
+		{
+			sum += 1.0 / dt;
+			count++;
+		}
+		else
+		{
+			std::cout << "fps: " << static_cast<int>(glm::round(sum / count)) << '\n';
+			count = 0;
+			sum = 0.0;
+		}
+#endif
 
 		glfwPollEvents();
 		while (EventRegistry::hasNextEvent())

@@ -40,10 +40,12 @@ private:
 	struct Chunk
 	{
 		GLuint noiseTex{};
+		GLuint normalTex{};
 		int lod{};
 		glm::ivec2 gridPos{};
 		glm::vec2 pos{};
 		std::vector<float> lods[maxLod + 1]{};
+		std::queue<std::vector<glm::vec3>> normalMaps{};
 
 		struct Sync
 		{
@@ -60,7 +62,7 @@ private:
 	int chunkSubdivision = 64;
 
 	float baseFreq = 2.0f / 1.0f;
-	float baseAmp = 4.0f;
+	float baseAmp = 12.0f;
 
 	struct ivec2hash { size_t operator()(const glm::ivec2& v) const { return std::hash<int>()(v.x) ^ std::hash<int>()(v.y); } };
 	std::unordered_map<glm::ivec2, Chunk*, ivec2hash> chunks;
@@ -74,11 +76,11 @@ private:
 
 	std::vector<float> generateChunkData(const glm::ivec2& pos, int lod, const std::vector<float>& prev);
 
+	std::vector<glm::vec3> generateNormals(const std::vector<float>& map, int lod);
+
 	bool loadReadyChunk(Chunk* chunk);
 
 	Chunk* generateChunk(const glm::ivec2 gridPos);
-
-	void generateChunkLod(Chunk* chunk);
 
 	void renderChunk(const Chunk* chunk);
 
