@@ -86,8 +86,6 @@ void TesselationTest::update(const Camera* camera)
 
 	static const int ext = 8;
 
-	chunkMtx.lock();
-
 	for (int x = cameraChunk.x - ext; x <= cameraChunk.x + ext; x++)
 		for (int y = cameraChunk.y - ext; y <= cameraChunk.y + ext; y++)
 		{
@@ -95,13 +93,13 @@ void TesselationTest::update(const Camera* camera)
 				chunks[glm::ivec2(x, y)] = generateChunk(glm::ivec2(x, y));
 		}
 
-	for (auto it = chunks.begin(); it != chunks.end();)
+	for (auto it = chunks.begin(); it != chunks.end(); it++)
 	{
 		auto chunk = it->second;
 
 		glm::vec2 chunkCenter = chunk->pos + 0.5f * chunkSize;
 		float chunkDist = glm::length(cameraPos - (glm::vec3(chunkCenter.x, 0.0f, chunkCenter.y)));
-		int targetLod = static_cast<int>(glm::floor(chunkDist / (2.0f * chunkSize)));
+		int targetLod = static_cast<int>(glm::floor(glm::log2(chunkDist / chunkSize)));
 		targetLod = glm::min(maxLod, glm::max(0, targetLod));
 
 		if (it->first.x < cameraChunk.x - ext || it->first.x > cameraChunk.x + ext
@@ -110,94 +108,118 @@ void TesselationTest::update(const Camera* camera)
 			targetLod = -1;
 		}
 
-		chunk->sync.mtx.lock();
+		if (chunk->lod != targetLod)
+			requestChunkLod(it->first, targetLod);
+	}
 
-		if (chunk->sync.targetLod != targetLod)
-		{
-			chunk->sync.targetLod = targetLod;
-			chunk->sync.ready = false;
-			chunkUpdateQueue.push(chunk->gridPos);
-		}
-
-		chunk->sync.mtx.unlock();
-
-		if (chunk->sync.ready && !loadReadyChunk(chunk))
-			it = chunks.erase(it);
+	chunkUpdateMtx.lock();
+	chunkReadyMtx.lock();
+	for (auto it = chunkReadyQueue.begin(); it != chunkReadyQueue.end();)
+	{
+		if (loadReadyChunk(it->first))
+			it = chunkReadyQueue.erase(it);
 		else
 			it++;
 	}
-
-	chunkMtx.unlock();
+	chunkReadyMtx.unlock();
+	chunkUpdateMtx.unlock();
 }
 
 void TesselationTest::chunkGenerator()
 {
-	while (true)
+	while (!stopChunkGenerator)
 	{
-		chunkMtx.lock();
-		while (!chunkUpdateQueue.empty() && !stopChunkGenerator)
+		ChunkUpdateEvent updateEvent;
+		updateEvent.free = false;
+		chunkUpdateMtx.lock();
+		for (auto it = chunkUpdateQueue.begin(); it != chunkUpdateQueue.end(); it++)
+			if (it->second.free)
+			{
+				updateEvent = it->second;
+				chunkReadyMtx.lock();
+				chunkReadyQueue[it->first] = updateEvent;
+				chunkReadyQueue[it->first].free = false;
+				chunkReadyMtx.unlock();
+				chunkUpdateQueue.erase(it);
+				break;
+			}
+		chunkUpdateMtx.unlock();
+		
+		if (!updateEvent.free)
 		{
-			glm::ivec2 chunkPos = chunkUpdateQueue.front();
-			chunkUpdateQueue.pop();
-			if (chunks.find(chunkPos) == chunks.end())
-				continue;
-
-			Chunk* chunk = chunks[chunkPos];
-
-			chunkMtx.unlock();
-
-			chunk->sync.mtx.lock();
-			int currentLod = chunk->sync.lodState;
-			int targetLod = chunk->sync.targetLod;
-			if (currentLod == targetLod || targetLod == -1)
-			{
-				chunk->sync.ready = true;
-				chunk->sync.mtx.unlock();
-				chunkMtx.lock();
-				continue;
-			}
-			chunk->sync.mtx.unlock();
-
-			if (targetLod > currentLod)
-			{
-				for (int lod = currentLod; lod < targetLod; lod++)
-				{
-					chunk->lods[lod].clear();
-					if (!chunk->normalMaps.empty())
-						chunk->normalMaps.pop();
-				}
-			}
-			else if (targetLod < currentLod)
-			{
-				for (int lod = currentLod - 1; lod >= targetLod; lod--)
-				{
-					const auto& prev = lod == maxLod ? std::vector<float>() : chunk->lods[lod + 1];
-					chunk->lods[lod] = std::move(generateChunkData(chunk->gridPos, lod, prev));
-					chunk->normalMaps.push(std::move(generateNormals(chunk->lods[lod], lod)));
-				}
-			}
-
-			chunk->sync.lodState = targetLod;
-
-			chunk->sync.mtx.lock();
-			if (chunk->sync.targetLod == targetLod)
-				chunk->sync.ready = true;
-			chunk->sync.mtx.unlock();
-
-			chunkMtx.lock();
+			// If there is no events to process sleep the thread
+			// to prevent continuous locking
+			using namespace std::chrono_literals;
+			std::this_thread::sleep_for(10ms);
+			continue;
 		}
-		chunkMtx.unlock();
 
-		if (stopChunkGenerator)
-			break;
+		// loadReadyChunk won't run for this chunk at the same time
+
+		// Update chunk data
+		Chunk* chunk = chunks[updateEvent.gridPos];
+
+		// Target LOD 0 - maxLod or -1 for chunk deletion
+		if (chunk->lod < updateEvent.targetLod && updateEvent.targetLod != -1)
+		{
+			assert(chunk->normalMaps.empty());
+			for (int lod = chunk->lod; lod < updateEvent.targetLod; lod++)
+			{
+				chunk->lods[lod].clear();
+				chunk->lods[lod].resize(0);
+			}
+		}
+		else if (chunk->lod > updateEvent.targetLod && updateEvent.targetLod != -1)
+		{
+			for (int lod = chunk->lod - 1; lod >= updateEvent.targetLod; lod--)
+			{
+				const auto& prev = lod == maxLod ? std::vector<float>() : chunk->lods[lod + 1];
+				chunk->lods[lod] = std::move(generateChunkData(chunk->gridPos, lod, prev));
+				chunk->normalMaps.push(std::move(generateNormals(chunk->lods[lod], lod)));
+			}
+		};
+
+		// Mark chunk as ready
+		chunkReadyMtx.lock();
+		chunkReadyQueue[updateEvent.gridPos].free = true;
+		chunkReadyMtx.unlock();
 	}
+}
+
+void TesselationTest::requestChunkLod(const glm::ivec2& gridPos, int targetLod)
+{
+	chunkUpdateMtx.lock();
+	chunkReadyMtx.lock();
+
+	ChunkUpdateEvent updateEvent;
+
+	updateEvent.gridPos = gridPos;
+	updateEvent.targetLod = targetLod;
+
+	if (chunkReadyQueue.find(gridPos) != chunkReadyQueue.end())
+	{
+		if (updateEvent.targetLod != chunkReadyQueue[gridPos].targetLod
+			&& chunkReadyQueue[gridPos].targetLod != -1)
+		{
+			updateEvent.free = false;
+			chunkUpdateQueue[gridPos] = updateEvent;
+		}
+	}
+	else
+	{
+		updateEvent.free = true;
+		chunkUpdateQueue[gridPos] = updateEvent;
+	}
+
+	chunkReadyMtx.unlock();
+	chunkUpdateMtx.unlock();
 }
 
 std::vector<float> TesselationTest::generateChunkData(const glm::ivec2& pos, int lod, const std::vector<float>& prev)
 {
 	// generate next lod map
 	const float freq = baseFreq / static_cast<float>(glm::pow(2, lod));
-	const float amp = baseAmp * static_cast<float>(glm::pow(1.7f, lod) / glm::pow(1.7f, maxLod));
+	const float amp = baseAmp * static_cast<float>(glm::pow(2.0f, lod) / glm::pow(2.0f, maxLod));
 	const int currentTexSize = baseTexSize / static_cast<int>(glm::pow(2, lod));
 
 	const float texelSize = chunkSize / (currentTexSize - 2);
@@ -208,7 +230,7 @@ std::vector<float> TesselationTest::generateChunkData(const glm::ivec2& pos, int
 	data.reserve(currentTexSize * currentTexSize);
 	for (int y = 0; y < currentTexSize; y++)
 		for (int x = 0; x < currentTexSize; x++)
-			data.push_back(Simplex::simplex2D(sampleStart + sampleWidth * glm::vec2(x, y), 0));
+			data.push_back(Simplex::simplex2D(sampleStart + sampleWidth * glm::vec2(x, y), std::hash<int>()(lod)));
 
 	// interpolate previous map
 	for (int x = 0; x < currentTexSize; x++)
@@ -259,21 +281,30 @@ std::vector<glm::vec3> TesselationTest::generateNormals(const std::vector<float>
 	return normals;
 }
 
-bool TesselationTest::loadReadyChunk(Chunk* chunk)
+bool TesselationTest::loadReadyChunk(const glm::ivec2& gridPos)
 {
+	if (!chunkReadyQueue[gridPos].free)
+		return false;
+
+	ChunkUpdateEvent updateEvent = chunkReadyQueue[gridPos];
+
+	if (chunkUpdateQueue.find(gridPos) != chunkUpdateQueue.end())
+		chunkUpdateQueue[gridPos].free = true;
+
+	Chunk* chunk = chunks[gridPos];
+
 	// Check if chunk should be destroyed
-	if (chunk->sync.targetLod == -1)
+	if (updateEvent.targetLod == -1)
 	{
 		destroyChunk(chunk);
-		return false;
+		chunks.erase(gridPos);
+		return true;
 	}
 
-	if (chunk->sync.targetLod < chunk->lod || chunk->lod == INT_MAX)
+	if (updateEvent.targetLod < chunk->lod)
 	{
-		if (chunk->lod == INT_MAX) chunk->lod = maxLod + 1;
-
 		glBindTexture(GL_TEXTURE_2D, chunk->noiseTex);
-		for (int lod = chunk->lod - 1; lod >= chunk->sync.targetLod; lod--)
+		for (int lod = chunk->lod - 1; lod >= updateEvent.targetLod; lod--)
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, lod);
 			const int texSize = baseTexSize / static_cast<int>(glm::pow(2, lod));
@@ -281,35 +312,32 @@ bool TesselationTest::loadReadyChunk(Chunk* chunk)
 		}
 
 		glBindTexture(GL_TEXTURE_2D, chunk->normalTex);
-		for (int lod = chunk->lod - 1; lod >= chunk->sync.targetLod; lod--)
+		for (int lod = chunk->lod - 1; lod >= updateEvent.targetLod; lod--)
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, lod);
 			const int texSize = baseTexSize / static_cast<int>(glm::pow(2, lod));
 			glTexImage2D(GL_TEXTURE_2D, lod, GL_RGB, texSize, texSize, NULL, GL_RGB, GL_FLOAT, chunk->normalMaps.front().data());
 			chunk->normalMaps.pop();
 		}
-
-		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-	else if (chunk->sync.targetLod > chunk->lod)
+	else if (updateEvent.targetLod > chunk->lod)
 	{
 		glBindTexture(GL_TEXTURE_2D, chunk->noiseTex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, chunk->sync.targetLod);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, updateEvent.targetLod);
 		glBindTexture(GL_TEXTURE_2D, chunk->normalTex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, chunk->sync.targetLod);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, updateEvent.targetLod);
 
-		for (int lod = chunk->lod; lod < chunk->sync.targetLod; lod++)
+		for (int lod = chunk->lod; lod < updateEvent.targetLod; lod++)
 		{
 			glBindTexture(GL_TEXTURE_2D, chunk->noiseTex);
 			glInvalidateTexImage(chunk->noiseTex, lod);
 			glBindTexture(GL_TEXTURE_2D, chunk->normalTex);
 			glInvalidateTexImage(chunk->normalTex, lod);
 		}
-
-		glBindTexture(GL_TEXTURE_2D, 0);
 	}
+	glBindTexture(GL_TEXTURE_2D, 0);
 
-	chunk->lod = chunk->sync.targetLod;
+	chunk->lod = updateEvent.targetLod;
 	return true;
 }
 
@@ -318,10 +346,7 @@ TesselationTest::Chunk* TesselationTest::generateChunk(const glm::ivec2 gridPos)
 	Chunk* chunk = new Chunk();
 	chunk->gridPos = gridPos;
 	chunk->pos = chunkSize * glm::vec2(gridPos);
-	chunk->lod = INT_MAX;
-	chunk->sync.targetLod = INT_MAX;
-	chunk->sync.lodState = maxLod + 1;
-	chunk->sync.ready = false;
+	chunk->lod = maxLod + 1;
 
 	glGenTextures(1, &chunk->noiseTex);
 	glBindTexture(GL_TEXTURE_2D, chunk->noiseTex);
@@ -346,7 +371,7 @@ TesselationTest::Chunk* TesselationTest::generateChunk(const glm::ivec2 gridPos)
 
 void TesselationTest::renderChunk(const Chunk* chunk)
 {
-	if (chunk->lod == INT_MAX)
+	if (chunk->lod == maxLod + 1)
 		return;
 
 	shader.set("uChunkPos", chunk->pos);

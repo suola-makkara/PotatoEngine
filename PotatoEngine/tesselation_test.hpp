@@ -46,39 +46,40 @@ private:
 		glm::vec2 pos{};
 		std::vector<float> lods[maxLod + 1]{};
 		std::queue<std::vector<glm::vec3>> normalMaps{};
+	};
 
-		struct Sync
-		{
-			std::mutex mtx{};
-			int targetLod{};
-			int lodState{};
-			bool ready{};
-		};
-
-		Sync sync{};
+	struct ChunkUpdateEvent
+	{
+		glm::ivec2 gridPos{};
+		int targetLod{};
+		bool free{};
 	};
 
 	float chunkSize = 64.0f; // meters
 	int chunkSubdivision = 64;
 
-	float baseFreq = 2.0f / 1.0f;
+	float baseFreq = 1.0f / 0.5f;
 	float baseAmp = 12.0f;
 
 	struct ivec2hash { size_t operator()(const glm::ivec2& v) const { return std::hash<int>()(v.x) ^ std::hash<int>()(v.y); } };
 	std::unordered_map<glm::ivec2, Chunk*, ivec2hash> chunks;
 
-	std::mutex chunkMtx{};
+	std::mutex chunkUpdateMtx{};
+	std::mutex chunkReadyMtx{};
 	bool stopChunkGenerator = false;
-	std::queue<glm::ivec2> chunkUpdateQueue{};
+	std::unordered_map<glm::ivec2, ChunkUpdateEvent, ivec2hash> chunkUpdateQueue{};
+	std::unordered_map<glm::ivec2, ChunkUpdateEvent, ivec2hash> chunkReadyQueue{};
 	std::thread chunkUpdateThread;
 
 	void chunkGenerator();
+
+	void requestChunkLod(const glm::ivec2& gridPos, int targetLod);
 
 	std::vector<float> generateChunkData(const glm::ivec2& pos, int lod, const std::vector<float>& prev);
 
 	std::vector<glm::vec3> generateNormals(const std::vector<float>& map, int lod);
 
-	bool loadReadyChunk(Chunk* chunk);
+	bool loadReadyChunk(const glm::ivec2& gridPos);
 
 	Chunk* generateChunk(const glm::ivec2 gridPos);
 

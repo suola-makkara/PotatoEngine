@@ -22,15 +22,20 @@ void main()
 
 	float d = length(lightPos - pos.xyz);
 
-	vec3 green = vec3(0.8, 0.8, 0.82);
-	vec3 gray = vec3(0.2, 0.2, 0.25);
+
+	vec3 yy = vec3(0.8, 0.8, 0.6);
+	vec3 red = vec3(0.8, 0.2, 0.2);
+	vec3 orange = vec3(0.8, 0.4, 0.2);
+	vec3 xx = vec3(0.2, 0.3, 0.5);
+
+	vec3 diff = mix(xx, mix(orange, mix(red, yy, smoothstep(5, 15, pos.y)), smoothstep(-10, 10, pos.y)), smoothstep(-20, -5, pos.y));
+
 
 	float amb = 0.2;
-	vec3 diff = vec3(0.6, 0.6, 0.8);
 	float spec = dot(n, l) < 0 ? 0 : pow(max(0.0, dot(h, n)), 16.0);
 
 	fColor = vec4(amb * diff + (0.1 * spec + diff) * max(0, dot(n, l)), 1);
 
-	//fColor = vec4(vec3(0.8, 0.5, pow((-pos.y + 80.0)/120.0,2)), 1.0);
+	//fColor = vec4(vec3(0.8, 0.5,  1.0);
 	//fColor = vec4((normal + 1.0) / 2.0, 1.0);
 }
