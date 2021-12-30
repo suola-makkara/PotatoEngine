@@ -20,6 +20,8 @@ public:
 
 	void render(const Camera* camera) const override;
 
+	std::vector<glm::vec3> selectVertices(const glm::vec2& start, const glm::vec2& size, const glm::mat4& projView) override;
+
 	static Mesh cube(Shader* shader);
 
 	glm::vec3 position{};

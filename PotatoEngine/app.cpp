@@ -14,11 +14,6 @@ App::App()
 
 App::~App()
 {
-	//delete tesselationTest;
-
-	delete scene;
-	delete camera;
-
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }
@@ -60,16 +55,13 @@ int App::run()
 				break;
 			case Event::Type::KEY_PRESS:
 				if (e.key == GLFW_KEY_R)
-					shader.compile();
-					//tesselationTest->shader.compile();
 				break;
 			}
 
-			camera->handleEvent(e);
+			Editor::get(window).handleEvent(e);
 		}
 
-		camera->update(static_cast<float>(dt));
-		//tesselationTest->update(camera);
+		Editor::get(window).update(static_cast<float>(dt));
 
 #ifdef VIEW_VIDEO_MEMORY
 		static int prev = 0;
@@ -86,8 +78,7 @@ int App::run()
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//tesselationTest->render(camera);
-		scene->render(camera);
+		Editor::get(window).render();
 
 		glfwSwapBuffers(window);
 	}
@@ -125,22 +116,6 @@ void App::initGL()
 void App::init(int windowWidth, int windowHeight)
 {
 	EventRegistry::init(window);
-
-	//tesselationTest = new TesselationTest();
-
-	shader = Shader("shaders/vtest.glsl", "shaders/ftest.glsl");
-
-	scene = new Object();
-	for (int i = 0; i < 10; i++)
-	{
-		Mesh* mesh = new Mesh(Mesh::cube(&shader));
-		mesh->position = glm::vec3(3 * i, 0, 0);
-		scene->add(mesh);
-	}
-
-	camera = new MovingCamera(glm::vec3(0, 0, 2), static_cast<float>(windowWidth) / windowHeight);
-	dynamic_cast<MovingCamera*>(camera)->far = 1000.0f;
-	dynamic_cast<MovingCamera*>(camera)->movementSpeed = 0.1f;
 }
 
 #ifdef DEBUG

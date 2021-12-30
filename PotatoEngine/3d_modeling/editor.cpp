@@ -1,0 +1,114 @@
+#include "editor.hpp"
+#include "mesh.hpp"
+#include "moving_camera.hpp"
+#include "editor_draw_utils.hpp"
+#include "defs.hpp"
+
+void Editor::handleEvent(const Event& event)
+{
+	camera->handleEvent(event);
+
+	switch (event.type)
+	{
+	case Event::Type::FRAME_BUFFER_RESIZE:
+		windowSize = event.size;
+		break;
+	case Event::Type::KEY_RELEASE:
+		switch (event.key)
+		{
+		case GLFW_KEY_ESCAPE:
+			mode = Mode::NONE;
+			selectedVertices.clear();
+			break;
+		}
+	case Event::Type::MOUSE_PRESS:
+		if (event.button == GLFW_MOUSE_BUTTON_RIGHT)
+		{
+			mode = Mode::AREA_SELECT;
+			areaSelect.start = glm::ivec2(event.pos);
+			areaSelect.end = glm::ivec2(event.pos);
+		}
+		break;
+	case Event::Type::MOUSE_MOVE:
+		if (mode == Mode::AREA_SELECT)
+		{
+			areaSelect.end = glm::ivec2(event.pos);
+			auto nStart = screenToNDC(areaSelect.start);
+			auto nEnd = screenToNDC(areaSelect.end);
+			auto nnStart = glm::min(nStart, nEnd);
+			auto nnEnd = glm::max(nStart, nEnd);
+			selectedVertices = scene->selectVertices(nnStart, nnEnd - nnStart, camera->getProjViewMat());
+		}
+		break;
+	case Event::Type::MOUSE_RELEASE:
+		if (event.button == GLFW_MOUSE_BUTTON_RIGHT && mode == Mode::AREA_SELECT)
+		{
+			mode = Mode::NONE;
+		}
+		break;
+	}
+}
+
+void Editor::update(float dt)
+{
+	camera->update(dt);
+}
+
+void Editor::render()
+{
+	scene->render(camera);
+
+	EditorDrawUtils::drawVertices(selectedVertices, camera->getProjViewMat());
+
+	switch (mode)
+	{
+	case Editor::Mode::AREA_SELECT:
+	{
+		auto nStart = screenToNDC(areaSelect.start);
+		auto nEnd = screenToNDC(areaSelect.end);
+		EditorDrawUtils::drawSelection(nStart, nEnd - nStart);
+		break;
+	}
+	}
+}
+
+Editor& Editor::get(GLFWwindow* window)
+{
+	static Editor editor(window);
+
+	return editor;
+}
+
+Editor::Editor(GLFWwindow* window)
+{
+	shader = Shader("shaders/vtest.glsl", "shaders/fcolor.glsl");
+
+	scene = new Object();
+	for (int i = 0; i < 10; i++)
+	{
+		Mesh* mesh = new Mesh(Mesh::cube(&shader));
+		mesh->position = glm::vec3(3 * i, 0, 0);
+		scene->add(mesh);
+	}
+
+	glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
+	camera = new MovingCamera(glm::vec3(0, 0, 2), static_cast<float>(windowSize.x) / windowSize.y);
+	//dynamic_cast<MovingCamera*>(camera)->far = 1000.0f;
+	//dynamic_cast<MovingCamera*>(camera)->movementSpeed = 0.1f;
+
+	EditorDrawUtils::init();
+}
+
+Editor::~Editor()
+{
+	delete scene;
+	delete camera;
+
+	EditorDrawUtils::deinit();
+}
+
+glm::vec2 Editor::screenToNDC(const glm::ivec2& v)
+{
+	glm::vec2 nv = glm::vec2(v) / glm::vec2(windowSize);
+	return glm::vec2((nv.x - 0.5f) * 2.0f, (0.5f - nv.y) * 2.0f);
+}

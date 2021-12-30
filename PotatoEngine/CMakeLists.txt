@@ -17,6 +17,6 @@ foreach(FILE ${ALL_FILES})
 	endif()
 endforeach()
 
-add_executable (${PROJECT_NAME} ${CPP} ${HPP} "app.hpp" "app.cpp" "defs.hpp" "tesselation_test.hpp" "tesselation_test.cpp" "3d_modeling/object.hpp"  "3d_modeling/object.cpp")
+add_executable (${PROJECT_NAME} ${CPP} ${HPP} "app.hpp" "app.cpp" "defs.hpp" "tesselation_test.hpp" "tesselation_test.cpp" "3d_modeling/object.hpp"  "3d_modeling/object.cpp" "3d_modeling/editor.hpp" "3d_modeling/editor.cpp")
 target_include_directories(${PROJECT_NAME} PUBLIC ${ALL_DIRS})
 target_link_libraries(${PROJECT_NAME} ${LIB})

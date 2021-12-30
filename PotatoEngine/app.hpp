@@ -3,7 +3,7 @@
 #define GLFW_INCLUDE_NONE
 
 #include "defs.hpp"
-#include "object.hpp"
+#include "editor.hpp"
 #include "shader.hpp"
 #include "event_registry.hpp"
 #include "moving_camera.hpp"
@@ -23,13 +23,6 @@ public:
 
 private:
 	GLFWwindow* window;
-
-	Shader shader;
-
-	Object* scene;
-
-	//TesselationTest* tesselationTest;
-	Camera* camera;
 
 	void initGLFW(int windowWidth, int windowHeight);
 

@@ -47,6 +47,7 @@ void Mesh::render(const Camera* camera) const
 	shader->use();
 	shader->set("uProjView", camera->getProjViewMat());
 	shader->set("uPosition", position);
+	shader->set("uColor", glm::vec4(0.4, 0.4, 0.4, 1.0));
 
 	glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_CULL_FACE);
@@ -59,6 +60,21 @@ void Mesh::render(const Camera* camera) const
 	glBindVertexArray(0);
 
 	Object::render(camera);
+}
+
+std::vector<glm::vec3> Mesh::selectVertices(const glm::vec2& start, const glm::vec2& size, const glm::mat4& projView)
+{
+	auto verts = Object::selectVertices(start, size, projView);
+
+	for (const auto& vert : vertices)
+	{
+		auto pos = projView * glm::vec4(vert + position, 1.0f);
+		pos /= pos.w;
+		if (pos.x > start.x && pos.y > start.y && pos.x < start.x + size.x && pos.y < start.y + size.y)
+			verts.push_back(vert + position);
+	}
+
+	return verts;
 }
 
 Mesh Mesh::cube(Shader* shader)
