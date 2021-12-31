@@ -6,6 +6,8 @@
 #include "glad/glad.h"
 #include "glm/glm.hpp"
 
+#include <unordered_set>
+
 class Mesh : public Object
 {
 public:
@@ -20,7 +22,11 @@ public:
 
 	void render(const Camera* camera) const override;
 
-	std::vector<glm::vec3> selectVertices(const glm::vec2& start, const glm::vec2& size, const glm::mat4& projView) override;
+	std::list<VertexRef> selectVertices(const glm::vec2& start, const glm::vec2& size, const glm::mat4& projView) override;
+
+	std::vector<glm::vec3> getVertices(const std::vector<unsigned>& indices) const;
+
+	void deleteVertices(const std::vector<unsigned>& indices);
 
 	static Mesh cube(Shader* shader);
 
@@ -29,8 +35,21 @@ public:
 protected:
 	Shader* shader;
 
-	std::list<glm::vec3> vertices;
+	std::vector<glm::vec3> vertices;
+	std::list<std::vector<unsigned>> faces;
+
+	struct uivec2hash { size_t operator()(const glm::uvec2& v) const { return std::hash<unsigned>()(v.x) ^ std::hash<unsigned>()(v.y); } };
+	std::unordered_set<glm::uvec2, uivec2hash> edges;
+	
+	unsigned elements;
 
 	GLuint vao;
 	GLuint vbo;
+	GLuint ebo;
+
+	void addFaces(const std::vector<std::vector<unsigned>>& nFaces);
+
+	void updateVertexBuffer();
+
+	void updateElementBuffer();
 };

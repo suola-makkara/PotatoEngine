@@ -20,6 +20,12 @@ void Editor::handleEvent(const Event& event)
 			mode = Mode::NONE;
 			selectedVertices.clear();
 			break;
+		case GLFW_KEY_DELETE:
+			mode = Mode::NONE;
+			for (auto vertRef : selectedVertices)
+				dynamic_cast<Mesh*>(vertRef.object)->deleteVertices(vertRef.vertexIndices);
+			selectedVertices.clear();
+			break;
 		}
 	case Event::Type::MOUSE_PRESS:
 		if (event.button == GLFW_MOUSE_BUTTON_RIGHT)
@@ -58,7 +64,9 @@ void Editor::render()
 {
 	scene->render(camera);
 
-	EditorDrawUtils::drawVertices(selectedVertices, camera->getProjViewMat());
+	for (const auto& vertRef : selectedVertices)
+		EditorDrawUtils::drawVertices(dynamic_cast<Mesh*>(vertRef.object)->getVertices(vertRef.vertexIndices), camera->getProjViewMat());
+	
 
 	switch (mode)
 	{
@@ -66,7 +74,10 @@ void Editor::render()
 	{
 		auto nStart = screenToNDC(areaSelect.start);
 		auto nEnd = screenToNDC(areaSelect.end);
-		EditorDrawUtils::drawSelection(nStart, nEnd - nStart);
+		auto nnStart = glm::min(nStart, nEnd);
+		auto nnEnd = glm::max(nStart, nEnd);
+		if (nStart != nEnd)
+		EditorDrawUtils::drawSelection(nnStart, nnEnd - nnStart);
 		break;
 	}
 	}

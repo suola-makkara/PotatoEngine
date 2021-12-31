@@ -6,5 +6,8 @@ uniform vec4 uColor;
 
 void main()
 {
-	fColor = uColor;
+	if (gl_FrontFacing)
+		fColor = uColor;
+	else
+		fColor = vec4(0.8 * uColor.xyz, uColor.w);
 }

@@ -41,7 +41,7 @@ private:
 
 	Mode mode = Mode::NONE;
 
-	std::vector<glm::vec3> selectedVertices{};
+	std::list<Object::VertexRef> selectedVertices{};
 
 	Editor(GLFWwindow* window);
 	Editor(const Editor&) = delete;

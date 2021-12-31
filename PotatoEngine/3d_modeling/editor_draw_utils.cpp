@@ -54,7 +54,7 @@ void EditorDrawUtils::init()
 	selectionShader = Shader("shaders/vselect.glsl", "shaders/fcolor.glsl");
 
 	static std::vector<glm::vec2> selectionData
-	{ {0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}, {1.0f, 1.0f} };
+	{ {0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f} };
 
 	glGenVertexArrays(1, &selectionVao);
 	glGenBuffers(1, &selectionVbo);
