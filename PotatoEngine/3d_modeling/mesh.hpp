@@ -24,11 +24,17 @@ public:
 
 	std::list<VertexRef> selectVertices(const glm::vec2& start, const glm::vec2& size, const glm::mat4& projView) override;
 
+	std::list<ObjectRef>selectObjects(const glm::vec2& screenCoord, const glm::mat4& projView, const glm::vec3& cameraPos) override;
+
 	std::vector<glm::vec3> getVertices(const std::vector<unsigned>& indices) const;
 
 	void deleteVertices(const std::vector<unsigned>& indices);
 
 	static Mesh cube(Shader* shader);
+
+	static Mesh cone(Shader* shader);
+
+	static Mesh cylinder(Shader* shader);
 
 	glm::vec3 position{};
 

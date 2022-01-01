@@ -1,6 +1,8 @@
 #include "mesh.hpp"
 #include "camera.hpp"
 
+#include "glm/gtc/constants.hpp"
+
 #include <unordered_map>
 
 Mesh::Mesh(Shader* shader)
@@ -65,11 +67,11 @@ void Mesh::render(const Camera* camera) const
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	glBindVertexArray(vao);
-	//glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_INT, 0);
-	glDrawElements(GL_LINES, elements, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_INT, 0);
+	//glDrawElements(GL_LINES, elements, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 
 	glUseProgram(0);
@@ -94,6 +96,63 @@ std::list<Object::VertexRef> Mesh::selectVertices(const glm::vec2& start, const 
 	verts.push_back(std::move(ref));
 
 	return verts;
+}
+
+std::list<Object::ObjectRef> Mesh::selectObjects(const glm::vec2& screenCoord, const glm::mat4& projView, const glm::vec3& cameraPos)
+{
+	std::vector<glm::vec3> projVerts;
+	for (const auto& vert : vertices)
+	{ 
+		auto v = projView * glm::vec4(vert + position, 1);
+		projVerts.push_back(glm::vec3(v.x, v.y, v.z) / v.w);
+	}
+
+	float dist = FLT_MAX;
+	for (const auto& face : faces)
+	{
+		int sgn = 0;
+		for (int i = 0; i < face.size(); i++)
+		{
+			const glm::vec3& a = projVerts[face[i]];
+			const glm::vec3& b = projVerts[face[(i + 1) % face.size()]];
+
+			const glm::vec2 A = glm::vec2(a.x, a.y);
+			const glm::vec2 B = glm::vec2(b.x, b.y);
+
+			const glm::vec2 AB = B - A;
+			const glm::vec2 AS = screenCoord - A;
+
+			const float c = AB.x * AS.y - AB.y * AS.x;
+
+			const int nsgn = c > 0 ? 1 : -1;
+
+			if (sgn == 0)
+				sgn = nsgn;
+			else if (nsgn != sgn)
+			{
+				sgn = 0;
+				break;
+			}
+		}
+
+		if (sgn != 0)
+		{
+			float d = glm::length(vertices[face[0]] + position - cameraPos);
+			dist = d < dist ? d : dist;
+		}
+	}
+
+	auto objs = Object::selectObjects(screenCoord, projView, cameraPos);
+
+	if (dist != FLT_MAX)
+	{
+		ObjectRef ref;
+		ref.object = this;
+		ref.dist = dist;
+		objs.push_back(ref);
+	}
+	
+	return objs;
 }
 
 std::vector<glm::vec3> Mesh::getVertices(const std::vector<unsigned>& indices) const
@@ -166,53 +225,6 @@ Mesh Mesh::cube(Shader* shader)
 {
 	Mesh mesh(shader);
 
-	/*
-	static const std::vector<glm::vec3> data
-	{
-		{1.0f, 1.0f, 1.0f},
-		{1.0f, -1.0f, 1.0f},
-		{1.0f, 1.0f, -1.0f},
-		{1.0f, -1.0f, 1.0f},
-		{1.0f, -1.0f, -1.0f},
-		{1.0f, 1.0f, -1.0f},
-
-		{-1.0f, 1.0f, 1.0f},
-		{-1.0f, 1.0f, -1.0f},
-		{-1.0f, -1.0f, 1.0f},
-		{-1.0f, -1.0f, 1.0f},
-		{-1.0f, 1.0f, -1.0f},
-		{-1.0f, -1.0f, -1.0f},
-
-		{1.0f, 1.0f, 1.0f},
-		{1.0f, 1.0f, -1.0f},
-		{-1.0f, 1.0f, 1.0f},
-		{-1.0f, 1.0f, 1.0f},
-		{1.0f, 1.0f, -1.0f},
-		{-1.0f, 1.0f, -1.0f},
-
-		{1.0f, -1.0f, 1.0f},
-		{-1.0f, -1.0f, 1.0f},
-		{1.0f, -1.0f, -1.0f},
-		{-1.0f, -1.0f, 1.0f},
-		{-1.0f, -1.0f, -1.0f},
-		{1.0f, -1.0f, -1.0f},
-
-		{1.0f, 1.0f, 1.0f},
-		{-1.0f, 1.0f, 1.0f},
-		{1.0f, -1.0f, 1.0f},
-		{-1.0f, 1.0f, 1.0f},
-		{-1.0f, -1.0f, 1.0f},
-		{1.0f, -1.0f, 1.0f},
-
-		{1.0f, 1.0f, -1.0f},
-		{1.0f, -1.0f, -1.0f},
-		{-1.0f, 1.0f, -1.0f},
-		{-1.0f, 1.0f, -1.0f},
-		{1.0f, -1.0f, -1.0f},
-		{-1.0f, -1.0f, -1.0f}
-	};
-	*/
-
 	static const std::vector<glm::vec3> dataV
 	{
 		{1,1,1},
@@ -237,6 +249,74 @@ Mesh Mesh::cube(Shader* shader)
 
 	mesh.vertices.insert(mesh.vertices.begin(), dataV.begin(), dataV.end());
 	mesh.addFaces(dataF);
+
+	mesh.updateVertexBuffer();
+	mesh.updateElementBuffer();
+
+	return mesh;
+}
+
+Mesh Mesh::cone(Shader* shader)
+{
+	Mesh mesh(shader);
+
+	static const int steps = 10;
+	std::vector<std::vector<unsigned>> nFaces;
+	glm::vec3 top = glm::vec3(0, 0.5f, 0);
+	//glm::vec3 bottom = glm::vec3(0, -0.5f, 0);
+	mesh.vertices.push_back(top);
+	//mesh.vertices.push_back(bottom);
+	std::vector<unsigned> bottomFace;
+	for (int i = 0; i < steps; i++)
+	{
+		float x = 0.5f * glm::cos(glm::two_pi<float>() * i / steps);
+		float y = 0.5f * glm::sin(glm::two_pi<float>() * i / steps);
+		glm::vec3 pos = glm::vec3(x, -0.5f, y);
+		mesh.vertices.push_back(pos);
+		nFaces.push_back(std::vector<unsigned>{0, static_cast<unsigned>(i + 1 == steps ? 1 : i + 2), static_cast<unsigned>(i + 1)});
+		bottomFace.push_back(i + 1);
+		//nFaces.push_back(std::vector<unsigned>{1, static_cast<unsigned>(i + 2), static_cast<unsigned>(i + 1 == steps ? 2 : i + 3)});
+	}
+	nFaces.push_back(std::move(bottomFace));
+
+	mesh.addFaces(nFaces);
+
+	mesh.updateVertexBuffer();
+	mesh.updateElementBuffer();
+
+	return mesh;
+}
+
+Mesh Mesh::cylinder(Shader* shader)
+{
+	Mesh mesh(shader);
+
+	static const int steps = 10;
+	std::vector<std::vector<unsigned>> nFaces;
+	std::vector<unsigned> topFace;
+	std::vector<unsigned> bottomFace;
+	for (int i = 0; i < steps; i++)
+	{
+		float x = 0.5f * glm::cos(glm::two_pi<float>() * i / steps);
+		float y = 0.5f * glm::sin(glm::two_pi<float>() * i / steps);
+		glm::vec3 posTop = glm::vec3(x, 0.5f, y);
+		glm::vec3 posBottom = glm::vec3(x, -0.5f, y);
+		mesh.vertices.push_back(posTop);
+		mesh.vertices.push_back(posBottom);
+		topFace.push_back(2 * i);
+		bottomFace.push_back(2 * i + 1);
+		nFaces.push_back(std::vector<unsigned>{
+			static_cast<unsigned>(2 * i + 1), 
+			static_cast<unsigned>(2 * i),
+			static_cast<unsigned>(i + 1 == steps ? 0 : 2 * (i + 1)),
+			static_cast<unsigned>(i + 1 == steps ? 1 : 2 * (i + 1) + 1)
+		});
+	}
+	std::reverse(topFace.begin(), topFace.end());
+	nFaces.push_back(std::move(topFace));
+	nFaces.push_back(std::move(bottomFace));
+
+	mesh.addFaces(nFaces);
 
 	mesh.updateVertexBuffer();
 	mesh.updateElementBuffer();
@@ -269,24 +349,24 @@ void Mesh::updateVertexBuffer()
 void Mesh::updateElementBuffer()
 {
 	std::vector<unsigned> indices;
-	//for (const auto& face : faces)
-	//{
-	//	unsigned first = face[0];
-	//	unsigned prev = face[1];
-	//	for (int i = 2; i < face.size(); i++)
-	//	{
-	//		indices.push_back(first);
-	//		indices.push_back(prev);
-	//		indices.push_back(face[i]);
-	//		prev = face[i];
-	//	}
-	//}
-
-	for (const auto& edge : edges)
+	for (const auto& face : faces)
 	{
-		indices.push_back(edge.x);
-		indices.push_back(edge.y);
+		unsigned first = face[0];
+		unsigned prev = face[1];
+		for (int i = 2; i < face.size(); i++)
+		{
+			indices.push_back(first);
+			indices.push_back(prev);
+			indices.push_back(face[i]);
+			prev = face[i];
+		}
 	}
+
+	//for (const auto& edge : edges)
+	//{
+	//	indices.push_back(edge.x);
+	//	indices.push_back(edge.y);
+	//}
 
 	elements = indices.size();
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);

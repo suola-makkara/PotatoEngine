@@ -42,6 +42,7 @@ private:
 	Mode mode = Mode::NONE;
 
 	std::list<Object::VertexRef> selectedVertices{};
+	Object* selectedObject = nullptr;
 
 	Editor(GLFWwindow* window);
 	Editor(const Editor&) = delete;

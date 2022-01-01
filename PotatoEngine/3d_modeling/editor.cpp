@@ -4,6 +4,8 @@
 #include "editor_draw_utils.hpp"
 #include "defs.hpp"
 
+#include <algorithm>
+
 void Editor::handleEvent(const Event& event)
 {
 	camera->handleEvent(event);
@@ -50,6 +52,16 @@ void Editor::handleEvent(const Event& event)
 		if (event.button == GLFW_MOUSE_BUTTON_RIGHT && mode == Mode::AREA_SELECT)
 		{
 			mode = Mode::NONE;
+			areaSelect.end = glm::ivec2(event.pos);
+			if (areaSelect.start == areaSelect.end)
+			{
+				auto objs = scene->selectObjects(screenToNDC(areaSelect.start), camera->getProjViewMat(), camera->getPosition());
+				if (!objs.empty())
+				{
+					objs.sort([](const Object::ObjectRef& ref0, const Object::ObjectRef& ref1) { return ref0.dist < ref1.dist; });
+					selectedObject = objs.front().object;
+				}
+			}
 		}
 		break;
 	}
@@ -97,7 +109,7 @@ Editor::Editor(GLFWwindow* window)
 	scene = new Object();
 	for (int i = 0; i < 10; i++)
 	{
-		Mesh* mesh = new Mesh(Mesh::cube(&shader));
+		Mesh* mesh = new Mesh(Mesh::cylinder(&shader));
 		mesh->position = glm::vec3(3 * i, 0, 0);
 		scene->add(mesh);
 	}

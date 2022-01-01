@@ -24,6 +24,18 @@ std::list<Object::VertexRef> Object::selectVertices(const glm::vec2& start, cons
 	return verts;
 }
 
+std::list<Object::ObjectRef> Object::selectObjects(const glm::vec2& screenCoord, const glm::mat4& projView, const glm::vec3& cameraPos)
+{
+	std::list<ObjectRef> objs;
+	for (auto child : children)
+	{
+		auto temp = child->selectObjects(screenCoord, projView, cameraPos);
+		objs.insert(objs.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
+	}
+
+	return objs;
+}
+
 void Object::add(Object* object)
 {
 	children.push_back(object);
