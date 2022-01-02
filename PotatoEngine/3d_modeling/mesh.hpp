@@ -37,8 +37,15 @@ public:
 	static Mesh cylinder(Shader* shader);
 
 	glm::vec3 position{};
+	glm::vec3 scale{ 1.0f };
+
+	void rotate(const glm::vec3& axis, float angle);
+
+	glm::mat4 getTransform() const;
 
 protected:
+	glm::mat3 basis{1.0f};
+
 	Shader* shader;
 
 	std::vector<glm::vec3> vertices;

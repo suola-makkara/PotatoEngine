@@ -2,6 +2,7 @@
 #include "camera.hpp"
 
 #include "glm/gtc/constants.hpp"
+#include "glm/gtx/transform.hpp"
 
 #include <unordered_map>
 
@@ -60,18 +61,19 @@ void Mesh::render(const Camera* camera) const
 {
 	shader->use();
 	shader->set("uProjView", camera->getProjViewMat());
-	shader->set("uPosition", position);
+	//shader->set("uPosition", position);
+	shader->set("uModel", getTransform());
 	shader->set("uColor", glm::vec4(0.4, 0.4, 0.4, 1.0));
 
 	glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	glBindVertexArray(vao);
-	glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_INT, 0);
-	//glDrawElements(GL_LINES, elements, GL_UNSIGNED_INT, 0);
+	//glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_LINES, elements, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 
 	glUseProgram(0);
@@ -84,9 +86,10 @@ std::list<Object::VertexRef> Mesh::selectVertices(const glm::vec2& start, const 
 	VertexRef ref;
 	ref.object = this;
 
+	auto tr = projView * getTransform();
 	for (int i = 0; i < vertices.size(); i++)
 	{
-		auto pos = projView * glm::vec4(vertices[i] + position, 1.0f);
+		auto pos = tr * glm::vec4(vertices[i], 1.0f);
 		pos /= pos.w;
 		if (pos.x > start.x && pos.y > start.y && pos.x < start.x + size.x && pos.y < start.y + size.y)
 			ref.vertexIndices.push_back(i);
@@ -100,10 +103,11 @@ std::list<Object::VertexRef> Mesh::selectVertices(const glm::vec2& start, const 
 
 std::list<Object::ObjectRef> Mesh::selectObjects(const glm::vec2& screenCoord, const glm::mat4& projView, const glm::vec3& cameraPos)
 {
+	auto tr = projView * getTransform();
 	std::vector<glm::vec3> projVerts;
 	for (const auto& vert : vertices)
 	{ 
-		auto v = projView * glm::vec4(vert + position, 1);
+		auto v = tr * glm::vec4(vert, 1);
 		projVerts.push_back(glm::vec3(v.x, v.y, v.z) / v.w);
 	}
 
@@ -137,7 +141,7 @@ std::list<Object::ObjectRef> Mesh::selectObjects(const glm::vec2& screenCoord, c
 
 		if (sgn != 0)
 		{
-			float d = glm::length(vertices[face[0]] + position - cameraPos);
+			float d = glm::length(glm::vec3(tr * glm::vec4(vertices[face[0]], 1)) - cameraPos);
 			dist = d < dist ? d : dist;
 		}
 	}
@@ -157,9 +161,10 @@ std::list<Object::ObjectRef> Mesh::selectObjects(const glm::vec2& screenCoord, c
 
 std::vector<glm::vec3> Mesh::getVertices(const std::vector<unsigned>& indices) const
 {
+	auto tr = getTransform();
 	std::vector<glm::vec3> verts;
 	for (auto i : indices)
-		verts.push_back(vertices[i] + position);
+		verts.push_back(tr * glm::vec4(vertices[i], 1));
 
 	return verts;
 }
@@ -324,6 +329,17 @@ Mesh Mesh::cylinder(Shader* shader)
 	return mesh;
 }
 
+void Mesh::rotate(const glm::vec3& axis, float angle)
+{
+	basis = glm::mat3(glm::rotate(angle, axis)) * basis;
+}
+
+glm::mat4 Mesh::getTransform() const
+{
+	auto temp = glm::translate(position) * glm::mat4(basis) * glm::scale(scale);
+	return temp;
+}
+
 void Mesh::addFaces(const std::vector<std::vector<unsigned>>& nFaces)
 {
 	faces.insert(faces.begin(), nFaces.begin(), nFaces.end());
@@ -349,24 +365,24 @@ void Mesh::updateVertexBuffer()
 void Mesh::updateElementBuffer()
 {
 	std::vector<unsigned> indices;
-	for (const auto& face : faces)
-	{
-		unsigned first = face[0];
-		unsigned prev = face[1];
-		for (int i = 2; i < face.size(); i++)
-		{
-			indices.push_back(first);
-			indices.push_back(prev);
-			indices.push_back(face[i]);
-			prev = face[i];
-		}
-	}
-
-	//for (const auto& edge : edges)
+	//for (const auto& face : faces)
 	//{
-	//	indices.push_back(edge.x);
-	//	indices.push_back(edge.y);
+	//	unsigned first = face[0];
+	//	unsigned prev = face[1];
+	//	for (int i = 2; i < face.size(); i++)
+	//	{
+	//		indices.push_back(first);
+	//		indices.push_back(prev);
+	//		indices.push_back(face[i]);
+	//		prev = face[i];
+	//	}
 	//}
+
+	for (const auto& edge : edges)
+	{
+		indices.push_back(edge.x);
+		indices.push_back(edge.y);
+	}
 
 	elements = indices.size();
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);

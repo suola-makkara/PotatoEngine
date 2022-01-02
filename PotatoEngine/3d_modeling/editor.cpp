@@ -112,6 +112,14 @@ Editor::Editor(GLFWwindow* window)
 		Mesh* mesh = new Mesh(Mesh::cylinder(&shader));
 		mesh->position = glm::vec3(3 * i, 0, 0);
 		scene->add(mesh);
+		mesh = new Mesh(Mesh::cone(&shader));
+		mesh->position = glm::vec3(3 * i, 0, 2);
+		scene->add(mesh);
+		mesh = new Mesh(Mesh::cube(&shader));
+		mesh->scale = glm::vec3(static_cast<float>(i + 1) / 10.0f, 1.0f, 1.0f);
+		mesh->position = glm::vec3(3 * i, 0, 4);
+		mesh->rotate(glm::vec3(1, 0, 0), i / 5.0f);
+		scene->add(mesh);
 	}
 
 	glfwGetWindowSize(window, &windowSize.x, &windowSize.y);

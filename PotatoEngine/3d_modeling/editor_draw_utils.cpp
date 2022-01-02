@@ -31,7 +31,7 @@ void EditorDrawUtils::drawVertices(const std::vector<glm::vec3>& vertices, const
 
 	vertexShader.use();
 	vertexShader.set("uProjView", projView);
-	vertexShader.set("uPosition", glm::vec3(0));
+	vertexShader.set("uModel", glm::mat4(1.0f));
 	vertexShader.set("uColor", glm::vec4(0.7, 0.7, 0.9, 1.0));
 
 	glBindBuffer(GL_ARRAY_BUFFER, vertexVbo);
