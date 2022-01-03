@@ -2,6 +2,26 @@
 
 #include "glm/gtx/transform.hpp"
 
+Object::Object(Object&& obj) noexcept
+{
+	operator=(std::move(obj));
+}
+
+Object& Object::operator=(Object&& obj) noexcept
+{
+	transformCache = obj.transformCache;
+	transformed = obj.transformed;
+	position = obj.position;
+	scale = obj.scale;
+	basis = obj.basis;
+	parent = obj.parent;
+	children = std::move(obj.children);
+
+	obj.parent = nullptr;
+
+	return *this;
+}
+
 Object::~Object()
 {
 	for (auto child : children)

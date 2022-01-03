@@ -22,6 +22,14 @@ public:
 		float dist;
 	};
 
+	Object() = default;
+
+	Object(const Object&) = delete;
+	Object(Object&& obj) noexcept;
+
+	Object& operator=(const Object&) = delete;
+	Object& operator=(Object&& obj) noexcept;
+
 	virtual ~Object();
 
 	virtual void render(const Camera* camera) const;

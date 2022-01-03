@@ -27,7 +27,7 @@ Mesh::Mesh(Shader* shader)
 
 Mesh::Mesh(Mesh&& mesh) noexcept
 {
-	*this = std::move(mesh);
+	Mesh::operator=(std::move(mesh));
 }
 
 Mesh::~Mesh()
@@ -39,6 +39,8 @@ Mesh::~Mesh()
 
 Mesh& Mesh::operator=(Mesh&& mesh) noexcept
 {
+	Object::operator=(std::move(mesh));
+
 	vertices = std::move(mesh.vertices);
 	faces = std::move(mesh.faces);
 	edges = std::move(mesh.edges);
