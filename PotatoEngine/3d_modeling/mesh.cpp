@@ -63,7 +63,7 @@ void Mesh::render(const Camera* camera) const
 	shader->set("uProjView", camera->getProjViewMat());
 	//shader->set("uPosition", position);
 	shader->set("uModel", getTransform());
-	shader->set("uColor", glm::vec4(0.4, 0.4, 0.4, 1.0));
+	shader->set("uColor", glm::vec4(color, 1.0));
 
 	glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_CULL_FACE);
@@ -327,17 +327,6 @@ Mesh Mesh::cylinder(Shader* shader)
 	mesh.updateElementBuffer();
 
 	return mesh;
-}
-
-void Mesh::rotate(const glm::vec3& axis, float angle)
-{
-	basis = glm::mat3(glm::rotate(angle, axis)) * basis;
-}
-
-glm::mat4 Mesh::getTransform() const
-{
-	auto temp = glm::translate(position) * glm::mat4(basis) * glm::scale(scale);
-	return temp;
 }
 
 void Mesh::addFaces(const std::vector<std::vector<unsigned>>& nFaces)

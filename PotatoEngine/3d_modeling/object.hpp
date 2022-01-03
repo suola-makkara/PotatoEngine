@@ -32,6 +32,23 @@ public:
 
 	void add(Object* object);
 
+	const glm::mat4& getTransform() const;
+
+	void setPosition(const glm::vec3& position);
+	void setScale(const glm::vec3& position);
+	void rotate(const glm::vec3& axis, float angle);
+
 protected:
+	void setTransformed();
+
+	mutable glm::mat4 transformCache{ 1.0f };
+	mutable bool transformed = false;
+
+	glm::vec3 position{};
+	glm::vec3 scale{ 1.0f };
+	glm::mat3 basis{ 1.0f };
+
+	Object* parent = nullptr;
+
 	std::list<Object*> children;
 };

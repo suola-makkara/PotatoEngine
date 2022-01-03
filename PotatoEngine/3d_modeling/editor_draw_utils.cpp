@@ -1,5 +1,9 @@
 #include "editor_draw_utils.hpp"
 #include "editor_draw_utils.hpp"
+#include "editor_draw_utils.hpp"
+#include "mesh.hpp"
+
+#include "glm/gtc/constants.hpp"
 
 #include <iostream>
 
@@ -49,6 +53,11 @@ void EditorDrawUtils::drawVertices(const std::vector<glm::vec3>& vertices, const
 	glUseProgram(0);
 }
 
+void EditorDrawUtils::drawSelector(const glm::vec3& pos, const Camera* camera)
+{
+	selector->render(camera);
+}
+
 void EditorDrawUtils::init()
 {
 	selectionShader = Shader("shaders/vselect.glsl", "shaders/fcolor.glsl");
@@ -77,6 +86,45 @@ void EditorDrawUtils::init()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+
+	selector = new Object();
+	auto cyl = new Mesh(Mesh::cylinder(&vertexShader));
+	cyl->setScale(glm::vec3(0.1f, 1.0f, 0.1f));
+	cyl->color = glm::vec3(0, 1, 0);
+	cyl->setPosition(glm::vec3(0, 0.5f, 0));
+	selector->add(cyl);
+	cyl = new Mesh(Mesh::cylinder(&vertexShader));
+	cyl->setScale(glm::vec3(0.1f, 1.0f, 0.1f));
+	cyl->rotate(glm::vec3(0, 0, 1), glm::half_pi<float>());
+	cyl->color = glm::vec3(1, 0, 0);
+	cyl->setPosition(glm::vec3(0.5f, 0, 0));
+	selector->add(cyl);
+	cyl = new Mesh(Mesh::cylinder(&vertexShader));
+	cyl->setScale(glm::vec3(0.1f, 1.0f, 0.1f));
+	cyl->rotate(glm::vec3(1, 0, 0), glm::half_pi<float>());
+	cyl->color = glm::vec3(0, 0, 1);
+	cyl->setPosition(glm::vec3(0, 0, 0.5f));
+	selector->add(cyl);
+
+	auto cone = new Mesh(Mesh::cone(&vertexShader));
+	cone->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
+	cone->rotate(glm::vec3(1, 0, 0), glm::half_pi<float>());
+	cone->color = glm::vec3(0, 0, 1);
+	cone->setPosition(glm::vec3(0, 0, 1.0f));
+	selector->add(cone);
+
+	cone = new Mesh(Mesh::cone(&vertexShader));
+	cone->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
+	cone->rotate(glm::vec3(0, 0, -1), glm::half_pi<float>());
+	cone->color = glm::vec3(1, 0, 0);
+	cone->setPosition(glm::vec3(1.0f, 0, 0));
+	selector->add(cone);
+
+	cone = new Mesh(Mesh::cone(&vertexShader));
+	cone->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
+	cone->color = glm::vec3(0, 1, 0);
+	cone->setPosition(glm::vec3(0, 1.0f, 0));
+	selector->add(cone);
 }
 
 void EditorDrawUtils::deinit()
@@ -86,6 +134,8 @@ void EditorDrawUtils::deinit()
 
 	glDeleteBuffers(1, &vertexVbo);
 	glDeleteVertexArrays(1, &vertexVao);
+
+	delete selector;
 }
 
 Shader EditorDrawUtils::selectionShader = Shader();
@@ -95,3 +145,5 @@ GLuint EditorDrawUtils::selectionVbo = 0;
 Shader EditorDrawUtils::vertexShader = Shader();
 GLuint EditorDrawUtils::vertexVao = 0;
 GLuint EditorDrawUtils::vertexVbo = 0;
+
+Object* EditorDrawUtils::selector = nullptr;

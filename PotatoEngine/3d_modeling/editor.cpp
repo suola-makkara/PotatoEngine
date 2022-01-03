@@ -79,6 +79,7 @@ void Editor::render()
 	for (const auto& vertRef : selectedVertices)
 		EditorDrawUtils::drawVertices(dynamic_cast<Mesh*>(vertRef.object)->getVertices(vertRef.vertexIndices), camera->getProjViewMat());
 	
+	EditorDrawUtils::drawSelector(glm::vec3(), camera);
 
 	switch (mode)
 	{
@@ -110,17 +111,19 @@ Editor::Editor(GLFWwindow* window)
 	for (int i = 0; i < 10; i++)
 	{
 		Mesh* mesh = new Mesh(Mesh::cylinder(&shader));
-		mesh->position = glm::vec3(3 * i, 0, 0);
+		mesh->setPosition(glm::vec3(3 * i, 0, 0));
 		scene->add(mesh);
 		mesh = new Mesh(Mesh::cone(&shader));
-		mesh->position = glm::vec3(3 * i, 0, 2);
+		mesh->setPosition(glm::vec3(3 * i, 0, 2));
 		scene->add(mesh);
 		mesh = new Mesh(Mesh::cube(&shader));
-		mesh->scale = glm::vec3(static_cast<float>(i + 1) / 10.0f, 1.0f, 1.0f);
-		mesh->position = glm::vec3(3 * i, 0, 4);
+		mesh->setScale(glm::vec3(static_cast<float>(i + 1) / 10.0f, 1.0f, 1.0f));
+		mesh->setPosition(glm::vec3(3 * i, 0, 4));
 		mesh->rotate(glm::vec3(1, 0, 0), i / 5.0f);
 		scene->add(mesh);
 	}
+
+	scene->rotate(glm::vec3(0, 1, 0), 1.5f);
 
 	glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
 	camera = new MovingCamera(glm::vec3(0, 0, 2), static_cast<float>(windowSize.x) / windowSize.y);

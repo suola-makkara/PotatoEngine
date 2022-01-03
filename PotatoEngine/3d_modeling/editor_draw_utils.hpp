@@ -1,6 +1,8 @@
 #pragma once
 
 #include "shader.hpp"
+#include "camera.hpp"
+#include "object.hpp"
 
 #include "glad/glad.h"
 #include "glm/glm.hpp"
@@ -11,6 +13,8 @@ public:
 	static void drawSelection(const glm::vec2& start, const glm::vec2& size);
 
 	static void drawVertices(const std::vector<glm::vec3>& vertices, const glm::mat4& projView);
+
+	static void drawSelector(const glm::vec3& pos, const Camera* camera);
 
 	static void init();
 
@@ -24,4 +28,6 @@ private:
 	static Shader vertexShader;
 	static GLuint vertexVao;
 	static GLuint vertexVbo;
+
+	static Object* selector;
 };
