@@ -40,6 +40,8 @@ public:
 
 	void add(Object* object);
 
+	void remove(Object* object);
+
 	const glm::mat4& getTransform() const;
 
 	void setPosition(const glm::vec3& position);

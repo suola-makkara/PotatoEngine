@@ -193,6 +193,12 @@ void Mesh::deleteVertices(const std::vector<unsigned>& indices)
 
 	vertices = nVerts;
 
+	if (vertices.size() == 0)
+	{
+		parent->remove(this);
+		return;
+	}
+
 	for (auto it = faces.begin(); it != faces.end();)
 	{
 		bool del = false;
@@ -226,6 +232,15 @@ void Mesh::deleteVertices(const std::vector<unsigned>& indices)
 
 	updateVertexBuffer();
 	updateElementBuffer();
+}
+
+glm::vec3 Mesh::getCenter() const
+{
+	glm::vec3 center(0.0f);
+	const auto& tr = getTransform();
+	for (const auto& v : vertices)
+		center += glm::vec3(tr * glm::vec4(v, 1));
+	return center / static_cast<float>(vertices.size());
 }
 
 Mesh Mesh::cube(Shader* shader)

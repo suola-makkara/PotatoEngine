@@ -30,6 +30,8 @@ public:
 
 	void deleteVertices(const std::vector<unsigned>& indices);
 
+	glm::vec3 getCenter() const;
+
 	static Mesh cube(Shader* shader);
 
 	static Mesh cone(Shader* shader);

@@ -55,6 +55,7 @@ void EditorDrawUtils::drawVertices(const std::vector<glm::vec3>& vertices, const
 
 void EditorDrawUtils::drawSelector(const glm::vec3& pos, const Camera* camera)
 {
+	selector->setPosition(pos);
 	selector->render(camera);
 }
 

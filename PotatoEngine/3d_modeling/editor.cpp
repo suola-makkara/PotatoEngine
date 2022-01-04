@@ -61,7 +61,11 @@ void Editor::handleEvent(const Event& event)
 					objs.sort([](const Object::ObjectRef& ref0, const Object::ObjectRef& ref1) { return ref0.dist < ref1.dist; });
 					selectedObject = objs.front().object;
 				}
+				else
+					selectedObject = nullptr;
 			}
+			else
+				selectedObject = nullptr;
 		}
 		break;
 	}
@@ -79,7 +83,8 @@ void Editor::render()
 	for (const auto& vertRef : selectedVertices)
 		EditorDrawUtils::drawVertices(dynamic_cast<Mesh*>(vertRef.object)->getVertices(vertRef.vertexIndices), camera->getProjViewMat());
 	
-	EditorDrawUtils::drawSelector(glm::vec3(), camera);
+	if (selectedObject != nullptr)
+		EditorDrawUtils::drawSelector(dynamic_cast<Mesh*>(selectedObject)->getCenter(), camera);
 
 	switch (mode)
 	{

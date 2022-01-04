@@ -65,6 +65,17 @@ void Object::add(Object* object)
 	children.push_back(object);
 }
 
+void Object::remove(Object* object)
+{
+	for (auto it = children.begin(); it != children.end(); it++)
+		if (*it == object)
+		{
+			delete *it;
+			children.erase(it);
+			break;
+		}
+}
+
 const glm::mat4& Object::getTransform() const
 {
 	if (transformed)
