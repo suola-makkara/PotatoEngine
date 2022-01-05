@@ -24,7 +24,7 @@ public:
 
 	std::list<VertexRef> selectVertices(const glm::vec2& start, const glm::vec2& size, const glm::mat4& projView) override;
 
-	std::list<ObjectRef>selectObjects(const glm::vec2& screenCoord, const glm::mat4& projView, const glm::vec3& cameraPos) override;
+	std::list<ObjectRef>selectObjects(const Ray& ray) override;
 
 	std::vector<glm::vec3> getVertices(const std::vector<unsigned>& indices) const;
 

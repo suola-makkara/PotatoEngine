@@ -3,6 +3,8 @@
 #include "moving_camera.hpp"
 #include "editor_draw_utils.hpp"
 #include "defs.hpp"
+#include "ray.hpp"
+#include "ray_cast.hpp"
 
 #include <algorithm>
 
@@ -55,7 +57,13 @@ void Editor::handleEvent(const Event& event)
 			areaSelect.end = glm::ivec2(event.pos);
 			if (areaSelect.start == areaSelect.end)
 			{
-				auto objs = scene->selectObjects(screenToNDC(areaSelect.start), camera->getProjViewMat(), camera->getPosition());
+				MovingCamera* mCamera = dynamic_cast<MovingCamera*>(camera);
+				auto dir = RayCast::castCameraRay(mCamera->fov, mCamera->getAspect(), screenToNDC(areaSelect.start));
+				Ray ray;
+				ray.direction = glm::transpose(glm::mat3(camera->getViewMat())) * dir;
+				ray.origin = camera->getPosition();
+
+				auto objs = scene->selectObjects(ray);
 				if (!objs.empty())
 				{
 					objs.sort([](const Object::ObjectRef& ref0, const Object::ObjectRef& ref1) { return ref0.dist < ref1.dist; });

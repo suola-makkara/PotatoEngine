@@ -1,5 +1,6 @@
 #include "mesh.hpp"
 #include "camera.hpp"
+#include "intersection_test.hpp"
 
 #include "glm/gtc/constants.hpp"
 #include "glm/gtx/transform.hpp"
@@ -103,61 +104,41 @@ std::list<Object::VertexRef> Mesh::selectVertices(const glm::vec2& start, const 
 	return verts;
 }
 
-std::list<Object::ObjectRef> Mesh::selectObjects(const glm::vec2& screenCoord, const glm::mat4& projView, const glm::vec3& cameraPos)
+std::list<Object::ObjectRef> Mesh::selectObjects(const Ray& ray)
 {
-	auto tr = projView * getTransform();
-	std::vector<glm::vec3> projVerts;
+	auto tr = getTransform();
+	std::vector<glm::vec3> trVerts;
 	for (const auto& vert : vertices)
 	{ 
 		auto v = tr * glm::vec4(vert, 1);
-		projVerts.push_back(glm::vec3(v.x, v.y, v.z) / v.w);
+		trVerts.push_back(glm::vec3(v.x, v.y, v.z) / v.w);
 	}
 
-	float dist = FLT_MAX;
+	float tmin = FLT_MAX;
+
 	for (const auto& face : faces)
 	{
-		int sgn = 0;
-		for (int i = 0; i < face.size(); i++)
+		unsigned first = face[0];
+		unsigned prev = face[1];
+		for (int i = 2; i < face.size(); i++)
 		{
-			const glm::vec3& a = projVerts[face[i]];
-			const glm::vec3& b = projVerts[face[(i + 1) % face.size()]];
-
-			const glm::vec2 A = glm::vec2(a.x, a.y);
-			const glm::vec2 B = glm::vec2(b.x, b.y);
-
-			const glm::vec2 AB = B - A;
-			const glm::vec2 AS = screenCoord - A;
-
-			const float c = AB.x * AS.y - AB.y * AS.x;
-
-			const int nsgn = c > 0 ? 1 : -1;
-
-			if (sgn == 0)
-				sgn = nsgn;
-			else if (nsgn != sgn)
-			{
-				sgn = 0;
-				break;
-			}
-		}
-
-		if (sgn != 0)
-		{
-			float d = glm::length(glm::vec3(tr * glm::vec4(vertices[face[0]], 1)) - cameraPos);
-			dist = d < dist ? d : dist;
+			float t = IntersectionTest::intersect(ray, trVerts[first], trVerts[prev], trVerts[face[i]]);
+			if (t < tmin)
+				tmin = t;
+			prev = face[i];
 		}
 	}
 
-	auto objs = Object::selectObjects(screenCoord, projView, cameraPos);
+	auto objs = Object::selectObjects(ray);
 
-	if (dist != FLT_MAX)
+	if (tmin != FLT_MAX)
 	{
 		ObjectRef ref;
+		ref.dist = tmin;
 		ref.object = this;
-		ref.dist = dist;
 		objs.push_back(ref);
 	}
-	
+
 	return objs;
 }
 

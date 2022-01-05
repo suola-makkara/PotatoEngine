@@ -44,7 +44,7 @@ glm::mat4 MovingCamera::getViewMat() const
 
 glm::mat4 MovingCamera::getProjMat() const
 {
-	return glm::perspective(fov, aspect, near, far);
+	return glm::perspective(glm::radians(fov), aspect, near, far);
 }
 
 void MovingCamera::update(float dt)
@@ -138,6 +138,11 @@ void MovingCamera::handleEvent(const Event& e)
 		aspect = static_cast<float>(e.size.x) / e.size.y;
 		break;
 	}
+}
+
+float MovingCamera::getAspect() const
+{
+	return aspect;
 }
 
 const glm::vec3 MovingCamera::up = glm::vec3(0, 1, 0);
