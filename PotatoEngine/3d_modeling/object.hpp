@@ -6,6 +6,8 @@
 
 #include <list>
 #include <vector>
+#include <string>
+#include <unordered_set>
 
 class Camera;
 
@@ -22,6 +24,8 @@ public:
 	{
 		Object* object;
 		float dist;
+
+		static void sort(std::list<ObjectRef>& objs);
 	};
 
 	Object() = default;
@@ -41,7 +45,6 @@ public:
 	virtual std::list<ObjectRef> selectObjects(const Ray& ray);
 
 	void add(Object* object);
-
 	void remove(Object* object);
 
 	const glm::mat4& getTransform() const;
@@ -49,6 +52,9 @@ public:
 	void setPosition(const glm::vec3& position);
 	void setScale(const glm::vec3& position);
 	void rotate(const glm::vec3& axis, float angle);
+
+	void addTag(const std::string& tag);
+	bool hasTag(const std::string& tag) const;
 
 protected:
 	void setTransformed();
@@ -63,4 +69,6 @@ protected:
 	Object* parent = nullptr;
 
 	std::list<Object*> children;
+
+	std::unordered_set<std::string> tags;
 };

@@ -59,6 +59,36 @@ void EditorDrawUtils::drawSelector(const glm::vec3& pos, const Camera* camera)
 	selector->render(camera);
 }
 
+bool EditorDrawUtils::pickSelector(const Ray& ray)
+{
+	auto objs = selector->selectObjects(ray);
+	if (!objs.empty())
+	{
+		Object::ObjectRef::sort(objs);
+		if (objs.front().object->hasTag("x"))
+			selectorAxis = 0;
+		else if (objs.front().object->hasTag("y"))
+			selectorAxis = 1;
+		else if (objs.front().object->hasTag("z"))
+			selectorAxis = 2;
+
+		std::cout << selectorAxis << '\n';
+		return true;
+	}
+	else
+	{
+		selectorAxis = -1;
+		return false;
+	}
+}
+
+void EditorDrawUtils::updateSelector(const Ray& ray)
+{
+	static const glm::vec3 axes[]{ {1, 0, 0}, {0, 1, 0}, {0, 0, 1} };
+
+
+}
+
 void EditorDrawUtils::init()
 {
 	selectionShader = Shader("shaders/vselect.glsl", "shaders/fcolor.glsl");
@@ -93,18 +123,21 @@ void EditorDrawUtils::init()
 	cyl->setScale(glm::vec3(0.1f, 1.0f, 0.1f));
 	cyl->color = glm::vec3(0, 1, 0);
 	cyl->setPosition(glm::vec3(0, 0.5f, 0));
+	cyl->addTag("y");
 	selector->add(cyl);
 	cyl = new Mesh(Mesh::cylinder(&vertexShader));
 	cyl->setScale(glm::vec3(0.1f, 1.0f, 0.1f));
 	cyl->rotate(glm::vec3(0, 0, 1), glm::half_pi<float>());
 	cyl->color = glm::vec3(1, 0, 0);
 	cyl->setPosition(glm::vec3(0.5f, 0, 0));
+	cyl->addTag("x");
 	selector->add(cyl);
 	cyl = new Mesh(Mesh::cylinder(&vertexShader));
 	cyl->setScale(glm::vec3(0.1f, 1.0f, 0.1f));
 	cyl->rotate(glm::vec3(1, 0, 0), glm::half_pi<float>());
 	cyl->color = glm::vec3(0, 0, 1);
 	cyl->setPosition(glm::vec3(0, 0, 0.5f));
+	cyl->addTag("z");
 	selector->add(cyl);
 
 	auto cone = new Mesh(Mesh::cone(&vertexShader));
@@ -112,20 +145,23 @@ void EditorDrawUtils::init()
 	cone->rotate(glm::vec3(1, 0, 0), glm::half_pi<float>());
 	cone->color = glm::vec3(0, 0, 1);
 	cone->setPosition(glm::vec3(0, 0, 1.0f));
+	cone->addTag("z");
 	selector->add(cone);
-
 	cone = new Mesh(Mesh::cone(&vertexShader));
 	cone->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
 	cone->rotate(glm::vec3(0, 0, -1), glm::half_pi<float>());
 	cone->color = glm::vec3(1, 0, 0);
 	cone->setPosition(glm::vec3(1.0f, 0, 0));
+	cone->addTag("x");
 	selector->add(cone);
-
 	cone = new Mesh(Mesh::cone(&vertexShader));
 	cone->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
 	cone->color = glm::vec3(0, 1, 0);
 	cone->setPosition(glm::vec3(0, 1.0f, 0));
+	cone->addTag("y");
 	selector->add(cone);
+
+	selectorAxis = -1;
 }
 
 void EditorDrawUtils::deinit()
@@ -148,3 +184,4 @@ GLuint EditorDrawUtils::vertexVao = 0;
 GLuint EditorDrawUtils::vertexVbo = 0;
 
 Object* EditorDrawUtils::selector = nullptr;
+int EditorDrawUtils::selectorAxis = -1;

@@ -3,6 +3,7 @@
 #include "shader.hpp"
 #include "camera.hpp"
 #include "object.hpp"
+#include "ray.hpp"
 
 #include "glad/glad.h"
 #include "glm/glm.hpp"
@@ -15,6 +16,10 @@ public:
 	static void drawVertices(const std::vector<glm::vec3>& vertices, const glm::mat4& projView);
 
 	static void drawSelector(const glm::vec3& pos, const Camera* camera);
+
+	static bool pickSelector(const Ray& ray);
+
+	static void updateSelector(const Ray& ray);
 
 	static void init();
 
@@ -30,4 +35,5 @@ private:
 	static GLuint vertexVbo;
 
 	static Object* selector;
+	static int selectorAxis;
 };

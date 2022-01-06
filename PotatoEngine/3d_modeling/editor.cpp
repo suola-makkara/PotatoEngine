@@ -34,9 +34,12 @@ void Editor::handleEvent(const Event& event)
 	case Event::Type::MOUSE_PRESS:
 		if (event.button == GLFW_MOUSE_BUTTON_RIGHT)
 		{
-			mode = Mode::AREA_SELECT;
-			areaSelect.start = glm::ivec2(event.pos);
-			areaSelect.end = glm::ivec2(event.pos);
+			if (!EditorDrawUtils::pickSelector(castRay(screenToNDC(glm::ivec2(event.pos)))))
+			{
+				mode = Mode::AREA_SELECT;
+				areaSelect.start = glm::ivec2(event.pos);
+				areaSelect.end = glm::ivec2(event.pos);
+			}
 		}
 		break;
 	case Event::Type::MOUSE_MOVE:
@@ -57,16 +60,10 @@ void Editor::handleEvent(const Event& event)
 			areaSelect.end = glm::ivec2(event.pos);
 			if (areaSelect.start == areaSelect.end)
 			{
-				MovingCamera* mCamera = dynamic_cast<MovingCamera*>(camera);
-				auto dir = RayCast::castCameraRay(mCamera->fov, mCamera->getAspect(), screenToNDC(areaSelect.start));
-				Ray ray;
-				ray.direction = glm::transpose(glm::mat3(camera->getViewMat())) * dir;
-				ray.origin = camera->getPosition();
-
-				auto objs = scene->selectObjects(ray);
+				auto objs = scene->selectObjects(castRay(screenToNDC(areaSelect.start)));
 				if (!objs.empty())
 				{
-					objs.sort([](const Object::ObjectRef& ref0, const Object::ObjectRef& ref1) { return ref0.dist < ref1.dist; });
+					Object::ObjectRef::sort(objs);
 					selectedObject = objs.front().object;
 				}
 				else
@@ -154,7 +151,17 @@ Editor::~Editor()
 	EditorDrawUtils::deinit();
 }
 
-glm::vec2 Editor::screenToNDC(const glm::ivec2& v)
+Ray Editor::castRay(const glm::vec2& coord) const
+{
+	MovingCamera* mCamera = dynamic_cast<MovingCamera*>(camera);
+	auto dir = RayCast::castCameraRay(mCamera->fov, mCamera->getAspect(), coord);
+	Ray ray;
+	ray.direction = glm::transpose(glm::mat3(camera->getViewMat())) * dir;
+	ray.origin = camera->getPosition();
+	return ray;
+}
+
+glm::vec2 Editor::screenToNDC(const glm::ivec2& v) const
 {
 	glm::vec2 nv = glm::vec2(v) / glm::vec2(windowSize);
 	return glm::vec2((nv.x - 0.5f) * 2.0f, (0.5f - nv.y) * 2.0f);

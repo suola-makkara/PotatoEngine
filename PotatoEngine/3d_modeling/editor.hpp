@@ -52,5 +52,7 @@ private:
 
 	~Editor();
 
-	glm::vec2 screenToNDC(const glm::ivec2& v);
+	glm::vec2 screenToNDC(const glm::ivec2& v) const;
+
+	Ray castRay(const glm::vec2& coord) const;
 };

@@ -16,6 +16,7 @@ Object& Object::operator=(Object&& obj) noexcept
 	basis = obj.basis;
 	parent = obj.parent;
 	children = std::move(obj.children);
+	tags = std::move(obj.tags);
 
 	obj.parent = nullptr;
 
@@ -107,9 +108,24 @@ void Object::rotate(const glm::vec3& axis, float angle)
 	setTransformed();
 }
 
+void Object::addTag(const std::string& tag)
+{
+	tags.insert(tag);
+}
+
+bool Object::hasTag(const std::string& tag) const
+{
+	return tags.find(tag) != tags.end();
+}
+
 void Object::setTransformed()
 {
 	for (auto child : children)
 		child->setTransformed();
 	transformed = true;
+}
+
+void Object::ObjectRef::sort(std::list<ObjectRef>& objs)
+{
+	objs.sort([](const Object::ObjectRef& ref0, const Object::ObjectRef& ref1) { return ref0.dist < ref1.dist; });
 }
