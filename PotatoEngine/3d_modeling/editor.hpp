@@ -28,18 +28,20 @@ private:
 	{
 		NONE,
 		AREA_SELECT,
+		COMMAND_ENTER,
 	};
 
-	union
+	struct
 	{
-		struct
-		{
-			glm::ivec2 start;
-			glm::ivec2 end;
-		} areaSelect;
-	};
+		glm::ivec2 start;
+		glm::ivec2 end;
+	} areaSelect;
+
+	std::string command;
 
 	Mode mode = Mode::NONE;
+
+	void setMode(Mode mode);
 
 	std::list<Object::VertexRef> selectedVertices{};
 	Object* selectedObject = nullptr;

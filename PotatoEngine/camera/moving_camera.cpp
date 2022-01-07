@@ -77,12 +77,12 @@ void MovingCamera::handleEvent(const Event& e)
 		case GLFW_KEY_D:
 			movement.x += 1;
 			break;
-		case GLFW_KEY_SPACE:
+		/*case GLFW_KEY_SPACE:
 			movement.y += 1;
 			break;
 		case GLFW_KEY_LEFT_SHIFT:
 			movement.y -= 1;
-			break;
+			break;*/
 		}
 		break;
 	case Event::Type::KEY_RELEASE:
@@ -100,12 +100,12 @@ void MovingCamera::handleEvent(const Event& e)
 		case GLFW_KEY_D:
 			movement.x -= 1;
 			break;
-		case GLFW_KEY_SPACE:
+		/*case GLFW_KEY_SPACE:
 			movement.y -= 1;
 			break;
 		case GLFW_KEY_LEFT_SHIFT:
 			movement.y += 1;
-			break;
+			break;*/
 		}
 		break;
 	case Event::Type::MOUSE_PRESS:

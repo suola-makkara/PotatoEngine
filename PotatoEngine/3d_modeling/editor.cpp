@@ -11,7 +11,8 @@
 
 void Editor::handleEvent(const Event& event)
 {
-	camera->handleEvent(event);
+	if (mode != Mode::COMMAND_ENTER)
+		camera->handleEvent(event);
 
 	switch (event.type)
 	{
@@ -22,14 +23,21 @@ void Editor::handleEvent(const Event& event)
 		switch (event.key)
 		{
 		case GLFW_KEY_ESCAPE:
-			mode = Mode::NONE;
+			setMode(Mode::NONE);
 			selectedVertices.clear();
 			break;
 		case GLFW_KEY_DELETE:
-			mode = Mode::NONE;
+			setMode(Mode::NONE);
 			for (auto vertRef : selectedVertices)
 				dynamic_cast<Mesh*>(vertRef.object)->deleteVertices(vertRef.vertexIndices);
 			selectedVertices.clear();
+			break;
+		case GLFW_KEY_ENTER:
+			if (mode == Mode::COMMAND_ENTER)
+			{
+				// executeCommand();
+				setMode(Mode::NONE);
+			}
 			break;
 		}
 	case Event::Type::MOUSE_PRESS:
@@ -37,7 +45,7 @@ void Editor::handleEvent(const Event& event)
 		{
 			if (!EditorDrawUtils::pickSelector(castRay(screenToNDC(glm::ivec2(event.pos)))))
 			{
-				mode = Mode::AREA_SELECT;
+				setMode(Mode::AREA_SELECT);
 				areaSelect.start = glm::ivec2(event.pos);
 				areaSelect.end = glm::ivec2(event.pos);
 			}
@@ -57,7 +65,7 @@ void Editor::handleEvent(const Event& event)
 	case Event::Type::MOUSE_RELEASE:
 		if (event.button == GLFW_MOUSE_BUTTON_RIGHT && mode == Mode::AREA_SELECT)
 		{
-			mode = Mode::NONE;
+			setMode(Mode::NONE);
 			areaSelect.end = glm::ivec2(event.pos);
 			if (areaSelect.start == areaSelect.end)
 			{
@@ -72,6 +80,18 @@ void Editor::handleEvent(const Event& event)
 			}
 			else
 				selectedObject = nullptr;
+		}
+		break;
+	case Event::Type::CHAR:
+		if (mode != Mode::COMMAND_ENTER && static_cast<char>(event.character) == ':')
+		{
+			setMode(Mode::COMMAND_ENTER);
+			command = "";
+		}
+		if (mode == Mode::COMMAND_ENTER)
+		{
+			command += static_cast<char>(event.character);
+			std::cout << static_cast<char>(event.character);
 		}
 		break;
 	}
@@ -112,6 +132,14 @@ Editor& Editor::get(GLFWwindow* window)
 	static Editor editor(window);
 
 	return editor;
+}
+
+void Editor::setMode(Mode mode)
+{
+	if (this->mode == Mode::COMMAND_ENTER)
+		std::cout << '\n';
+
+	this->mode = mode;
 }
 
 Editor::Editor(GLFWwindow* window)
