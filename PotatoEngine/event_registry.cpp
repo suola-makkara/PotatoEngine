@@ -10,6 +10,7 @@ void EventRegistry::init(GLFWwindow* window)
 	glfwSetCursorPosCallback(window, cursorPositionCallback);
 	glfwSetScrollCallback(window, scrollCallback);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+	glfwSetCharCallback(window, characterCallback);
 }
 
 bool EventRegistry::hasNextEvent()
@@ -111,6 +112,15 @@ void EventRegistry::framebufferSizeCallback(GLFWwindow* window, int width, int h
 	e.type = Event::Type::FRAME_BUFFER_RESIZE;
 	e.size = glm::ivec2(width, height);
 
+	events.push(e);
+}
+
+void EventRegistry::characterCallback(GLFWwindow* window, unsigned character)
+{
+	Event e{};
+	e.type = Event::Type::CHAR;
+	e.character = character;
+	
 	events.push(e);
 }
 

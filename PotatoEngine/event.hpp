@@ -15,6 +15,7 @@ struct Event
 		MOUSE_MOVE,
 		FRAME_BUFFER_RESIZE,
 		SCROLL,
+		CHAR,
 	};
 
 	Type type;
@@ -29,5 +30,6 @@ struct Event
 		};
 		glm::ivec2 size;
 		double scroll;
+		unsigned character;
 	};
 };

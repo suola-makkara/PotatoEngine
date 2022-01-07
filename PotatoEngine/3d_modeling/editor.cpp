@@ -7,6 +7,7 @@
 #include "ray_cast.hpp"
 
 #include <algorithm>
+#include <iostream>
 
 void Editor::handleEvent(const Event& event)
 {
