@@ -29,7 +29,7 @@ void Editor::handleEvent(const Event& event)
 			break;
 		case GLFW_KEY_DELETE:
 			setMode(Mode::NONE);
-			for (auto vertRef : selectedVertices)
+			for (auto& vertRef : selectedVertices)
 				dynamic_cast<Mesh*>(vertRef.object)->deleteVertices(vertRef.vertexIndices);
 			selectedVertices.clear();
 			break;
@@ -185,7 +185,7 @@ Ray Editor::castRay(const glm::vec2& coord) const
 {
 	MovingCamera* mCamera = dynamic_cast<MovingCamera*>(camera);
 	auto dir = RayCast::castCameraRay(mCamera->fov, mCamera->getAspect(), coord);
-	Ray ray;
+	Ray ray{};
 	ray.direction = glm::transpose(glm::mat3(camera->getViewMat())) * dir;
 	ray.origin = camera->getPosition();
 	return ray;
@@ -196,7 +196,7 @@ void Editor::executeCommand()
 	std::stringstream sss;
 	sss << command;
 	sss.ignore();
-	char token;
+	char token{};
 
 	auto getAxis = [](char token, glm::vec3& axis) {
 		switch (token)

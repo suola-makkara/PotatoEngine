@@ -21,7 +21,7 @@ float IntersectionTest::intersect(const Ray& ray, const glm::vec3& v0, const glm
 	const float q = DOT(e1, h);
 	if (q > -EPSILON && q < EPSILON) return FLT_MAX;
 
-	const float iq = 1.0 / q;
+	const float iq = 1.0f / q;
 	const float Dx = ray.origin.x - x0, Dy = ray.origin.y - y0, Dz = ray.origin.z - z0;
 	const float u = iq * DOT(D, h);
 	if (u < 0.0 || u > 1.0) return FLT_MAX;

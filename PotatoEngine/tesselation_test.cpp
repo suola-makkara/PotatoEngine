@@ -230,7 +230,7 @@ std::vector<float> TesselationTest::generateChunkData(const glm::ivec2& pos, int
 	data.reserve(currentTexSize * currentTexSize);
 	for (int y = 0; y < currentTexSize; y++)
 		for (int x = 0; x < currentTexSize; x++)
-			data.push_back(Simplex::simplex2D(sampleStart + sampleWidth * glm::vec2(x, y), std::hash<int>()(lod)));
+			data.push_back(Simplex::simplex2D(sampleStart + sampleWidth * glm::vec2(x, y), static_cast<int>(std::hash<int>()(lod))));
 
 	// interpolate previous map
 	for (int x = 0; x < currentTexSize; x++)

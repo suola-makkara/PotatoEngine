@@ -16,8 +16,8 @@ class Object
 public:
 	struct VertexRef
 	{
-		Object* object;
-		std::vector<unsigned> vertexIndices;
+		Object* object{};
+		std::vector<unsigned> vertexIndices{};
 	};
 
 	struct ObjectRef

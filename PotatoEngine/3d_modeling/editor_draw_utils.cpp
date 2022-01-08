@@ -47,7 +47,7 @@ void EditorDrawUtils::drawVertices(const std::vector<glm::vec3>& vertices, const
 	glPointSize(4.0f);
 
 	glBindVertexArray(vertexVao);
-	glDrawArrays(GL_POINTS, 0, vertices.size());
+	glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(vertices.size()));
 	glBindVertexArray(0);
 
 	glUseProgram(0);

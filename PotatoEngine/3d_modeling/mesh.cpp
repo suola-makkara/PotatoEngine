@@ -106,7 +106,7 @@ std::list<Object::VertexRef> Mesh::selectVertices(const glm::vec2& start, const 
 
 std::list<Object::ObjectRef> Mesh::selectObjects(const Ray& ray)
 {
-	auto tr = getTransform();
+	const auto& tr = getTransform();
 	std::vector<glm::vec3> trVerts;
 	for (const auto& vert : vertices)
 	{ 
@@ -133,7 +133,7 @@ std::list<Object::ObjectRef> Mesh::selectObjects(const Ray& ray)
 
 	if (tmin != FLT_MAX)
 	{
-		ObjectRef ref;
+		ObjectRef ref{};
 		ref.dist = tmin;
 		ref.object = this;
 		objs.push_back(ref);
@@ -144,7 +144,7 @@ std::list<Object::ObjectRef> Mesh::selectObjects(const Ray& ray)
 
 std::vector<glm::vec3> Mesh::getVertices(const std::vector<unsigned>& indices) const
 {
-	auto tr = getTransform();
+	const auto& tr = getTransform();
 	std::vector<glm::vec3> verts;
 	for (auto i : indices)
 		verts.push_back(tr * glm::vec4(vertices[i], 1));
@@ -167,7 +167,7 @@ void Mesh::deleteVertices(const std::vector<unsigned>& indices)
 		}
 		else
 		{
-			remap.push_back(nVerts.size());
+			remap.push_back(static_cast<unsigned>(nVerts.size()));
 			nVerts.push_back(vertices[i]);
 		}
 	}
@@ -331,12 +331,12 @@ void Mesh::addFaces(const std::vector<std::vector<unsigned>>& nFaces)
 {
 	faces.insert(faces.begin(), nFaces.begin(), nFaces.end());
 
-	for (const auto face : faces)
+	for (const auto& face : faces)
 	{
 		for (int i = 0; i < face.size(); i++)
 		{
 			int a = face[i];
-			int b = face[(i + 1) % face.size()];
+			int b = face[static_cast<size_t>(i + 1) % face.size()];
 			edges.insert(glm::uvec2(glm::min(a, b), glm::max(a, b)));
 		}
 	}
@@ -371,7 +371,7 @@ void Mesh::updateElementBuffer()
 		indices.push_back(edge.y);
 	}
 
-	elements = indices.size();
+	elements = static_cast<unsigned>(indices.size());
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(unsigned), indices.data(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
