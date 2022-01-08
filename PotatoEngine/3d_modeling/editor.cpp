@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 
 void Editor::handleEvent(const Event& event)
 {
@@ -35,8 +36,8 @@ void Editor::handleEvent(const Event& event)
 		case GLFW_KEY_ENTER:
 			if (mode == Mode::COMMAND_ENTER)
 			{
-				// executeCommand();
 				setMode(Mode::NONE);
+				executeCommand();
 			}
 			break;
 		}
@@ -188,6 +189,92 @@ Ray Editor::castRay(const glm::vec2& coord) const
 	ray.direction = glm::transpose(glm::mat3(camera->getViewMat())) * dir;
 	ray.origin = camera->getPosition();
 	return ray;
+}
+
+void Editor::executeCommand()
+{
+	std::stringstream sss;
+	sss << command;
+	sss.ignore();
+	char token;
+
+	auto getAxis = [](char token, glm::vec3& axis) {
+		switch (token)
+		{
+		case 'x':
+			axis = glm::vec3(1, 0, 0);
+			break;
+		case 'y':
+			axis = glm::vec3(0, 1, 0);
+			break;
+		case 'z':
+			axis = glm::vec3(0, 0, 1);
+			break;
+		default:
+			return false;
+			break;
+		}
+
+		return true;
+	};
+
+	auto getFloat = [&](float& f) {
+		sss >> f;
+		return !sss.fail();
+	};
+
+	auto next = [&]() {
+		sss >> token;
+		return !sss.fail();
+	};
+
+
+	if (!next()) return;
+
+	glm::vec3 axis;
+	if (getAxis(token, axis) && selectedObject != nullptr)
+	{
+		float off;
+		if (getFloat(off))
+		{
+			const auto& pos = selectedObject->getPosition();
+			selectedObject->setPosition(pos + axis * off);
+		}
+	}
+	else if (token == 's')
+	{
+		if (!next())
+		{
+			if (selectedObject != nullptr)
+			{
+				const auto& scale = selectedObject->getScale();
+				std::cout << scale.x << ", " << scale.y << ", " << scale.z << '\n';
+			}
+		}
+		else if (getAxis(token, axis) && selectedObject != nullptr)
+		{
+			float scale;
+			if (getFloat(scale))
+			{
+				const auto& initialScale = selectedObject->getScale();
+				selectedObject->setScale((glm::vec3(1) - axis) * initialScale + axis * scale);
+			}
+		}
+	}
+	else if (token == 'r')
+	{
+		if (next() && selectedObject != nullptr)
+		{
+			if (getAxis(token, axis))
+			{
+				float rotation;
+				if (getFloat(rotation))
+				{
+					selectedObject->rotate(axis, glm::radians(rotation));
+				}
+			}
+		}
+	}
 }
 
 glm::vec2 Editor::screenToNDC(const glm::ivec2& v) const

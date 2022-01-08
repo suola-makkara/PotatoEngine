@@ -90,6 +90,16 @@ const glm::mat4& Object::getTransform() const
 	return transformCache;
 }
 
+const glm::vec3& Object::getPosition() const
+{
+	return position;
+}
+
+const glm::vec3& Object::getScale() const
+{
+	return scale;
+}
+
 void Object::setPosition(const glm::vec3& position)
 {
 	this->position = position;

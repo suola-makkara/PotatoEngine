@@ -49,6 +49,9 @@ public:
 
 	const glm::mat4& getTransform() const;
 
+	const glm::vec3& getPosition() const;
+	const glm::vec3& getScale() const;
+
 	void setPosition(const glm::vec3& position);
 	void setScale(const glm::vec3& position);
 	void rotate(const glm::vec3& axis, float angle);
