@@ -72,4 +72,8 @@ private:
 	glm::dvec2 getMousePos();
 
 	bool isMoveMode(Mode mode) const;
+
+	bool leftCtrlDown() const;
+
+	bool leftShiftDown() const;
 };

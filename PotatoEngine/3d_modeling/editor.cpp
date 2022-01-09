@@ -239,13 +239,13 @@ void Editor::updateObjectTransform(const glm::dvec2& mousePos)
 {
 	auto ray = camera->castRay(screenToNDC(glm::ivec2(mousePos)));
 
+	glm::vec3 newPosition;
+
 	if (this->mode == Mode::MOVE_X || this->mode == Mode::MOVE_Y || this->mode == Mode::MOVE_Z)
 	{
 		glm::vec3 axis{};
 		axis[static_cast<int>(mode) - static_cast<int>(Mode::MOVE_X)] = 1.0f;
-		const glm::vec3 newPosition = startPosition + RayUtiles::projectLine(ray, startPosition, axis) * axis;
-
-		selectedObject->setPosition(newPosition);
+		newPosition = startPosition + RayUtiles::projectLine(ray, startPosition, axis) * axis;
 	}
 	else
 	{
@@ -268,10 +268,17 @@ void Editor::updateObjectTransform(const glm::dvec2& mousePos)
 		}
 
 		const glm::vec2 uv = RayUtiles::projectPlane(ray, startPosition, u, v);
-
-		const glm::vec3 newPosition = startPosition + uv.x * u + uv.y * v;
-		selectedObject->setPosition(newPosition);
+		
+		newPosition = startPosition + uv.x * u + uv.y * v;
 	}
+
+	if (leftCtrlDown())
+	{
+		const auto delta = newPosition - startPosition;
+		newPosition = startPosition + glm::round(delta);
+	}
+
+	selectedObject->setPosition(newPosition);
 }
 
 void Editor::executeCommand()
@@ -371,6 +378,16 @@ bool Editor::isMoveMode(Mode mode) const
 {
 	return mode == Mode::MOVE_X || mode == Mode::MOVE_Y || mode == Mode::MOVE_Z ||
 		mode == Mode::MOVE_XY || mode == Mode::MOVE_YZ || mode == Mode::MOVE_ZX;
+}
+
+bool Editor::leftCtrlDown() const
+{
+	return glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS;
+}
+
+bool Editor::leftShiftDown() const
+{
+	return glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
 }
 
 glm::vec2 Editor::screenToNDC(const glm::ivec2& v) const
