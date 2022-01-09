@@ -18,6 +18,8 @@ public:
 
 	glm::mat4 getProjMat() const override;
 
+	Ray castRay(const glm::vec2& ndc) const override;
+
 	void update(float dt) override;
 
 	void handleEvent(const Event & e) override;

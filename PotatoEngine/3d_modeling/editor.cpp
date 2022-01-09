@@ -5,6 +5,7 @@
 #include "defs.hpp"
 #include "ray.hpp"
 #include "ray_cast.hpp"
+#include "ray_utiles.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -40,11 +41,35 @@ void Editor::handleEvent(const Event& event)
 				executeCommand();
 			}
 			break;
+		case GLFW_KEY_X:
+			if (selectedObject != nullptr)
+			{
+				startPosition = selectedObject->getPosition();
+				setMode(Mode::MOVE_X);
+				updateObjectTransform(getMousePos());
+			}
+			break;
+		case GLFW_KEY_Y:
+			if (selectedObject != nullptr)
+			{
+				startPosition = selectedObject->getPosition();
+				setMode(Mode::MOVE_Y);
+				updateObjectTransform(getMousePos());
+			}
+			break;
+		case GLFW_KEY_Z:
+			if (selectedObject != nullptr)
+			{
+				startPosition = selectedObject->getPosition();
+				setMode(Mode::MOVE_Z);
+				updateObjectTransform(getMousePos());
+			}
+			break;
 		}
 	case Event::Type::MOUSE_PRESS:
 		if (event.button == GLFW_MOUSE_BUTTON_RIGHT)
 		{
-			if (!EditorDrawUtils::pickSelector(castRay(screenToNDC(glm::ivec2(event.pos)))))
+			if (!EditorDrawUtils::pickSelector(camera->castRay(screenToNDC(glm::ivec2(event.pos)))))
 			{
 				setMode(Mode::AREA_SELECT);
 				areaSelect.start = glm::ivec2(event.pos);
@@ -62,6 +87,8 @@ void Editor::handleEvent(const Event& event)
 			auto nnEnd = glm::max(nStart, nEnd);
 			selectedVertices = scene->selectVertices(nnStart, nnEnd - nnStart, camera->getProjViewMat());
 		}
+		else if (mode == Mode::MOVE_X || mode == Mode::MOVE_Y || mode == Mode::MOVE_Z)
+			updateObjectTransform(event.pos);
 		break;
 	case Event::Type::MOUSE_RELEASE:
 		if (event.button == GLFW_MOUSE_BUTTON_RIGHT && mode == Mode::AREA_SELECT)
@@ -70,7 +97,7 @@ void Editor::handleEvent(const Event& event)
 			areaSelect.end = glm::ivec2(event.pos);
 			if (areaSelect.start == areaSelect.end)
 			{
-				auto objs = scene->selectObjects(castRay(screenToNDC(areaSelect.start)));
+				auto objs = scene->selectObjects(camera->castRay(screenToNDC(areaSelect.start)));
 				if (!objs.empty())
 				{
 					Object::ObjectRef::sort(objs);
@@ -143,7 +170,7 @@ void Editor::setMode(Mode mode)
 	this->mode = mode;
 }
 
-Editor::Editor(GLFWwindow* window)
+Editor::Editor(GLFWwindow* window) : window(window)
 {
 	shader = Shader("shaders/vtest.glsl", "shaders/fcolor.glsl");
 
@@ -163,7 +190,7 @@ Editor::Editor(GLFWwindow* window)
 		scene->add(mesh);
 	}
 
-	scene->rotate(glm::vec3(0, 1, 0), 1.5f);
+	//scene->rotate(glm::vec3(0, 1, 0), 1.5f);
 
 	glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
 	camera = new MovingCamera(glm::vec3(0, 0, 2), static_cast<float>(windowSize.x) / windowSize.y);
@@ -181,14 +208,15 @@ Editor::~Editor()
 	EditorDrawUtils::deinit();
 }
 
-Ray Editor::castRay(const glm::vec2& coord) const
+void Editor::updateObjectTransform(const glm::dvec2& mousePos)
 {
-	MovingCamera* mCamera = dynamic_cast<MovingCamera*>(camera);
-	auto dir = RayCast::castCameraRay(mCamera->fov, mCamera->getAspect(), coord);
-	Ray ray{};
-	ray.direction = glm::transpose(glm::mat3(camera->getViewMat())) * dir;
-	ray.origin = camera->getPosition();
-	return ray;
+	auto ray = camera->castRay(screenToNDC(glm::ivec2(mousePos)));
+
+	glm::vec3 axis{};
+	axis[static_cast<int>(mode) - static_cast<int>(Mode::MOVE_X)] = 1.0f;
+	const glm::vec3 newPosition = startPosition + RayUtiles::projectLine(ray, startPosition, axis) * axis;
+
+	selectedObject->setPosition(newPosition);
 }
 
 void Editor::executeCommand()
@@ -275,6 +303,13 @@ void Editor::executeCommand()
 			}
 		}
 	}
+}
+
+glm::dvec2 Editor::getMousePos()
+{
+	double x, y;
+	glfwGetCursorPos(window, &x, &y);
+	return glm::dvec2(x, y);
 }
 
 glm::vec2 Editor::screenToNDC(const glm::ivec2& v) const

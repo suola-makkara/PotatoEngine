@@ -1,6 +1,7 @@
 #pragma once
 
 #include "event.hpp"
+#include "ray.hpp"
 
 #include "glm\glm.hpp"
 
@@ -16,6 +17,8 @@ public:
 	virtual glm::mat4 getViewMat() const = 0;
 
 	virtual glm::mat4 getProjMat() const = 0;
+
+	virtual Ray castRay(const glm::vec2& ndc) const = 0;
 
 	virtual void update(float dt) = 0;
 

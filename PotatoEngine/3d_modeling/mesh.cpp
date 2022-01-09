@@ -217,11 +217,19 @@ void Mesh::deleteVertices(const std::vector<unsigned>& indices)
 
 glm::vec3 Mesh::getCenter() const
 {
-	glm::vec3 center(0.0f);
 	const auto& tr = getTransform();
+
+	glm::vec3 max = glm::vec3(-FLT_MAX);
+	glm::vec3 min = glm::vec3(FLT_MAX);
+
 	for (const auto& v : vertices)
-		center += glm::vec3(tr * glm::vec4(v, 1));
-	return center / static_cast<float>(vertices.size());
+	{
+		max = glm::max(v, max);
+		min = glm::min(v, min);
+	}
+
+	auto center = (min + max) / 2.0f;
+	return glm::vec3(tr * glm::vec4(center, 1.0f));
 }
 
 Mesh Mesh::cube(Shader* shader)

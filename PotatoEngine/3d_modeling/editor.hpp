@@ -22,6 +22,7 @@ private:
 	Shader shader;
 	Camera* camera;
 
+	GLFWwindow* window;
 	glm::ivec2 windowSize;
 
 	enum class Mode
@@ -29,6 +30,9 @@ private:
 		NONE,
 		AREA_SELECT,
 		COMMAND_ENTER,
+		MOVE_X,
+		MOVE_Y,
+		MOVE_Z,
 	};
 
 	struct
@@ -36,6 +40,8 @@ private:
 		glm::ivec2 start;
 		glm::ivec2 end;
 	} areaSelect;
+
+	glm::vec3 startPosition;
 
 	std::string command;
 
@@ -54,9 +60,11 @@ private:
 
 	~Editor();
 
+	void updateObjectTransform(const glm::dvec2& mousePos);
+
 	glm::vec2 screenToNDC(const glm::ivec2& v) const;
 
-	Ray castRay(const glm::vec2& coord) const;
-
 	void executeCommand();
+
+	glm::dvec2 getMousePos();
 };

@@ -1,4 +1,5 @@
 #include "moving_camera.hpp"
+#include "ray_cast.hpp"
 
 #include "GLFW\glfw3.h"
 #include "glm\gtc\constants.hpp"
@@ -45,6 +46,15 @@ glm::mat4 MovingCamera::getViewMat() const
 glm::mat4 MovingCamera::getProjMat() const
 {
 	return glm::perspective(glm::radians(fov), aspect, near, far);
+}
+
+Ray MovingCamera::castRay(const glm::vec2& ndc) const
+{
+	auto dir = RayCast::castCameraRay(fov, aspect, ndc);
+	Ray ray{};
+	ray.direction = glm::transpose(glm::mat3(getViewMat())) * dir;
+	ray.origin = pos;
+	return ray;
 }
 
 void MovingCamera::update(float dt)
