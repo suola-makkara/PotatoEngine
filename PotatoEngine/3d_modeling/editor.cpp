@@ -40,28 +40,51 @@ void Editor::handleEvent(const Event& event)
 				setMode(Mode::NONE);
 				executeCommand();
 			}
+			else if (isMoveMode(mode))
+				startPosition = selectedObject->getPosition();
 			break;
 		case GLFW_KEY_X:
 			if (selectedObject != nullptr)
 			{
-				startPosition = selectedObject->getPosition();
-				setMode(Mode::MOVE_X);
+				if (mode == Mode::MOVE_Y)
+					setMode(Mode::MOVE_XY);
+				else if (mode == Mode::MOVE_Z)
+					setMode(Mode::MOVE_ZX);
+				else
+				{
+					setMode(Mode::MOVE_X);
+					startPosition = selectedObject->getPosition();
+				}
 				updateObjectTransform(getMousePos());
 			}
 			break;
 		case GLFW_KEY_Y:
 			if (selectedObject != nullptr)
 			{
-				startPosition = selectedObject->getPosition();
-				setMode(Mode::MOVE_Y);
+				if (mode == Mode::MOVE_Z)
+					setMode(Mode::MOVE_YZ);
+				else if (mode == Mode::MOVE_X)
+					setMode(Mode::MOVE_XY);
+				else
+				{
+					setMode(Mode::MOVE_Y);
+					startPosition = selectedObject->getPosition();
+				}
 				updateObjectTransform(getMousePos());
 			}
 			break;
 		case GLFW_KEY_Z:
 			if (selectedObject != nullptr)
 			{
-				startPosition = selectedObject->getPosition();
-				setMode(Mode::MOVE_Z);
+				if (mode == Mode::MOVE_X)
+					setMode(Mode::MOVE_ZX);
+				else if (mode == Mode::MOVE_Y)
+					setMode(Mode::MOVE_YZ);
+				else
+				{
+					setMode(Mode::MOVE_Z);
+					startPosition = selectedObject->getPosition();
+				}
 				updateObjectTransform(getMousePos());
 			}
 			break;
@@ -87,7 +110,8 @@ void Editor::handleEvent(const Event& event)
 			auto nnEnd = glm::max(nStart, nEnd);
 			selectedVertices = scene->selectVertices(nnStart, nnEnd - nnStart, camera->getProjViewMat());
 		}
-		else if (mode == Mode::MOVE_X || mode == Mode::MOVE_Y || mode == Mode::MOVE_Z)
+		else if (mode == Mode::MOVE_X || mode == Mode::MOVE_Y || mode == Mode::MOVE_Z ||
+			mode == Mode::MOVE_XY || mode == Mode::MOVE_YZ || mode == Mode::MOVE_ZX)
 			updateObjectTransform(event.pos);
 		break;
 	case Event::Type::MOUSE_RELEASE:
@@ -167,6 +191,9 @@ void Editor::setMode(Mode mode)
 	if (this->mode == Mode::COMMAND_ENTER)
 		std::cout << '\n';
 
+	if (isMoveMode(this->mode))
+		selectedObject->setPosition(startPosition);
+
 	this->mode = mode;
 }
 
@@ -212,11 +239,39 @@ void Editor::updateObjectTransform(const glm::dvec2& mousePos)
 {
 	auto ray = camera->castRay(screenToNDC(glm::ivec2(mousePos)));
 
-	glm::vec3 axis{};
-	axis[static_cast<int>(mode) - static_cast<int>(Mode::MOVE_X)] = 1.0f;
-	const glm::vec3 newPosition = startPosition + RayUtiles::projectLine(ray, startPosition, axis) * axis;
+	if (this->mode == Mode::MOVE_X || this->mode == Mode::MOVE_Y || this->mode == Mode::MOVE_Z)
+	{
+		glm::vec3 axis{};
+		axis[static_cast<int>(mode) - static_cast<int>(Mode::MOVE_X)] = 1.0f;
+		const glm::vec3 newPosition = startPosition + RayUtiles::projectLine(ray, startPosition, axis) * axis;
 
-	selectedObject->setPosition(newPosition);
+		selectedObject->setPosition(newPosition);
+	}
+	else
+	{
+		glm::vec3 u;
+		glm::vec3 v;
+		if (mode == Mode::MOVE_XY)
+		{
+			u = glm::vec3(1, 0, 0);
+			v = glm::vec3(0, 1, 0);
+		}
+		else if (mode == Mode::MOVE_YZ)
+		{
+			u = glm::vec3(0, 1, 0);
+			v = glm::vec3(0, 0, 1);
+		}
+		else
+		{
+			u = glm::vec3(0, 0, 1);
+			v = glm::vec3(1, 0, 0);
+		}
+
+		const glm::vec2 uv = RayUtiles::projectPlane(ray, startPosition, u, v);
+
+		const glm::vec3 newPosition = startPosition + uv.x * u + uv.y * v;
+		selectedObject->setPosition(newPosition);
+	}
 }
 
 void Editor::executeCommand()
@@ -310,6 +365,12 @@ glm::dvec2 Editor::getMousePos()
 	double x, y;
 	glfwGetCursorPos(window, &x, &y);
 	return glm::dvec2(x, y);
+}
+
+bool Editor::isMoveMode(Mode mode) const
+{
+	return mode == Mode::MOVE_X || mode == Mode::MOVE_Y || mode == Mode::MOVE_Z ||
+		mode == Mode::MOVE_XY || mode == Mode::MOVE_YZ || mode == Mode::MOVE_ZX;
 }
 
 glm::vec2 Editor::screenToNDC(const glm::ivec2& v) const

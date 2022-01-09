@@ -33,6 +33,9 @@ private:
 		MOVE_X,
 		MOVE_Y,
 		MOVE_Z,
+		MOVE_XY,
+		MOVE_YZ,
+		MOVE_ZX,
 	};
 
 	struct
@@ -67,4 +70,6 @@ private:
 	void executeCommand();
 
 	glm::dvec2 getMousePos();
+
+	bool isMoveMode(Mode mode) const;
 };
