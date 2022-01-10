@@ -36,6 +36,10 @@ private:
 		MOVE_XY,
 		MOVE_YZ,
 		MOVE_ZX,
+		ROTATE,
+		ROTATE_X,
+		ROTATE_Y,
+		ROTATE_Z,
 	};
 
 	struct
@@ -45,6 +49,7 @@ private:
 	} areaSelect;
 
 	glm::vec3 startPosition;
+	glm::mat3 startBasis;
 
 	std::string command;
 
@@ -72,8 +77,8 @@ private:
 	glm::dvec2 getMousePos();
 
 	bool isMoveMode(Mode mode) const;
+	bool isRotationMode(Mode mode) const;
 
 	bool leftCtrlDown() const;
-
 	bool leftShiftDown() const;
 };

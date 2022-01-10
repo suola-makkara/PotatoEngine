@@ -100,6 +100,11 @@ const glm::vec3& Object::getScale() const
 	return scale;
 }
 
+const glm::mat3& Object::getBasis() const
+{
+	return basis;
+}
+
 void Object::setPosition(const glm::vec3& position)
 {
 	this->position = position;
@@ -109,6 +114,12 @@ void Object::setPosition(const glm::vec3& position)
 void Object::setScale(const glm::vec3& scale)
 {
 	this->scale = scale;
+	setTransformed();
+}
+
+void Object::setBasis(const glm::mat3& basis)
+{
+	this->basis = basis;
 	setTransformed();
 }
 

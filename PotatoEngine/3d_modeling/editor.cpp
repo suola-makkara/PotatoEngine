@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <cmath>
 
 void Editor::handleEvent(const Event& event)
 {
@@ -43,10 +44,19 @@ void Editor::handleEvent(const Event& event)
 			else if (isMoveMode(mode))
 				startPosition = selectedObject->getPosition();
 			break;
+		case GLFW_KEY_R:
+			if (selectedObject != nullptr)
+			{
+				setMode(Mode::ROTATE);
+				startBasis = selectedObject->getBasis();
+			}
+			break;
 		case GLFW_KEY_X:
 			if (selectedObject != nullptr)
 			{
-				if (mode == Mode::MOVE_Y)
+				if (mode == Mode::ROTATE)
+					setMode(Mode::ROTATE_X);
+				else if (mode == Mode::MOVE_Y)
 					setMode(Mode::MOVE_XY);
 				else if (mode == Mode::MOVE_Z)
 					setMode(Mode::MOVE_ZX);
@@ -61,7 +71,9 @@ void Editor::handleEvent(const Event& event)
 		case GLFW_KEY_Y:
 			if (selectedObject != nullptr)
 			{
-				if (mode == Mode::MOVE_Z)
+				if (mode == Mode::ROTATE)
+					setMode(Mode::ROTATE_Y);
+				else if (mode == Mode::MOVE_Z)
 					setMode(Mode::MOVE_YZ);
 				else if (mode == Mode::MOVE_X)
 					setMode(Mode::MOVE_XY);
@@ -76,7 +88,9 @@ void Editor::handleEvent(const Event& event)
 		case GLFW_KEY_Z:
 			if (selectedObject != nullptr)
 			{
-				if (mode == Mode::MOVE_X)
+				if (mode == Mode::ROTATE)
+					setMode(Mode::ROTATE_Z);
+				else if (mode == Mode::MOVE_X)
 					setMode(Mode::MOVE_ZX);
 				else if (mode == Mode::MOVE_Y)
 					setMode(Mode::MOVE_YZ);
@@ -92,12 +106,11 @@ void Editor::handleEvent(const Event& event)
 	case Event::Type::MOUSE_PRESS:
 		if (event.button == GLFW_MOUSE_BUTTON_RIGHT)
 		{
-			if (!EditorDrawUtils::pickSelector(camera->castRay(screenToNDC(glm::ivec2(event.pos)))))
-			{
-				setMode(Mode::AREA_SELECT);
-				areaSelect.start = glm::ivec2(event.pos);
-				areaSelect.end = glm::ivec2(event.pos);
-			}
+			//if (!EditorDrawUtils::pickSelector(camera->castRay(screenToNDC(glm::ivec2(event.pos))))) { }
+
+			setMode(Mode::AREA_SELECT);
+			areaSelect.start = glm::ivec2(event.pos);
+			areaSelect.end = glm::ivec2(event.pos);
 		}
 		break;
 	case Event::Type::MOUSE_MOVE:
@@ -110,8 +123,7 @@ void Editor::handleEvent(const Event& event)
 			auto nnEnd = glm::max(nStart, nEnd);
 			selectedVertices = scene->selectVertices(nnStart, nnEnd - nnStart, camera->getProjViewMat());
 		}
-		else if (mode == Mode::MOVE_X || mode == Mode::MOVE_Y || mode == Mode::MOVE_Z ||
-			mode == Mode::MOVE_XY || mode == Mode::MOVE_YZ || mode == Mode::MOVE_ZX)
+		else if (isMoveMode(mode) || isRotationMode(mode))
 			updateObjectTransform(event.pos);
 		break;
 	case Event::Type::MOUSE_RELEASE:
@@ -125,7 +137,10 @@ void Editor::handleEvent(const Event& event)
 				if (!objs.empty())
 				{
 					Object::ObjectRef::sort(objs);
-					selectedObject = objs.front().object;
+					if (objs.front().object == selectedObject)
+						selectedObject = nullptr;
+					else
+						selectedObject = objs.front().object;
 				}
 				else
 					selectedObject = nullptr;
@@ -191,8 +206,10 @@ void Editor::setMode(Mode mode)
 	if (this->mode == Mode::COMMAND_ENTER)
 		std::cout << '\n';
 
-	if (isMoveMode(this->mode))
+	if (isMoveMode(this->mode) && mode != Mode::AREA_SELECT)
 		selectedObject->setPosition(startPosition);
+	else if (isRotationMode(this->mode) && mode != Mode::AREA_SELECT)
+		selectedObject->setBasis(startBasis);
 
 	this->mode = mode;
 }
@@ -238,47 +255,78 @@ Editor::~Editor()
 void Editor::updateObjectTransform(const glm::dvec2& mousePos)
 {
 	auto ray = camera->castRay(screenToNDC(glm::ivec2(mousePos)));
-
-	glm::vec3 newPosition;
-
-	if (this->mode == Mode::MOVE_X || this->mode == Mode::MOVE_Y || this->mode == Mode::MOVE_Z)
+	
+	if (mode == Mode::ROTATE_X || mode == Mode::ROTATE_Y || mode == Mode::ROTATE_Z)
 	{
 		glm::vec3 axis{};
-		axis[static_cast<int>(mode) - static_cast<int>(Mode::MOVE_X)] = 1.0f;
-		newPosition = startPosition + RayUtiles::projectLine(ray, startPosition, axis) * axis;
-	}
-	else
-	{
+		axis[static_cast<int>(mode) - static_cast<int>(Mode::ROTATE_X)] = 1.0f;
+
 		glm::vec3 u;
 		glm::vec3 v;
-		if (mode == Mode::MOVE_XY)
-		{
-			u = glm::vec3(1, 0, 0);
-			v = glm::vec3(0, 1, 0);
-		}
-		else if (mode == Mode::MOVE_YZ)
+		if (mode == Mode::ROTATE_X)
 		{
 			u = glm::vec3(0, 1, 0);
 			v = glm::vec3(0, 0, 1);
 		}
-		else
+		else if (mode == Mode::ROTATE_Y)
 		{
 			u = glm::vec3(0, 0, 1);
 			v = glm::vec3(1, 0, 0);
 		}
+		else
+		{
+			u = glm::vec3(1, 0, 0);
+			v = glm::vec3(0, 1, 0);
+		}
 
-		const glm::vec2 uv = RayUtiles::projectPlane(ray, startPosition, u, v);
-		
-		newPosition = startPosition + uv.x * u + uv.y * v;
+		const glm::vec2 uv = RayUtiles::projectPlane(ray, selectedObject->getPosition(), u, v);
+
+		selectedObject->setBasis(startBasis);
+		selectedObject->rotate(axis, std::atan2f(uv.y, uv.x));
 	}
-
-	if (leftCtrlDown())
+	else
 	{
-		const auto delta = newPosition - startPosition;
-		newPosition = startPosition + glm::round(delta);
-	}
+		glm::vec3 newPosition;
 
-	selectedObject->setPosition(newPosition);
+		if (mode == Mode::MOVE_X || mode == Mode::MOVE_Y || mode == Mode::MOVE_Z)
+		{
+			glm::vec3 axis{};
+			axis[static_cast<int>(mode) - static_cast<int>(Mode::MOVE_X)] = 1.0f;
+			newPosition = startPosition + RayUtiles::projectLine(ray, startPosition, axis) * axis;
+		}
+		else
+		{
+			glm::vec3 u;
+			glm::vec3 v;
+			if (mode == Mode::MOVE_XY)
+			{
+				u = glm::vec3(1, 0, 0);
+				v = glm::vec3(0, 1, 0);
+			}
+			else if (mode == Mode::MOVE_YZ)
+			{
+				u = glm::vec3(0, 1, 0);
+				v = glm::vec3(0, 0, 1);
+			}
+			else
+			{
+				u = glm::vec3(0, 0, 1);
+				v = glm::vec3(1, 0, 0);
+			}
+
+			const glm::vec2 uv = RayUtiles::projectPlane(ray, startPosition, u, v);
+
+			newPosition = startPosition + uv.x * u + uv.y * v;
+		}
+
+		if (leftCtrlDown())
+		{
+			const auto delta = newPosition - startPosition;
+			newPosition = startPosition + glm::round(delta);
+		}
+
+		selectedObject->setPosition(newPosition);
+	}
 }
 
 void Editor::executeCommand()
@@ -378,6 +426,11 @@ bool Editor::isMoveMode(Mode mode) const
 {
 	return mode == Mode::MOVE_X || mode == Mode::MOVE_Y || mode == Mode::MOVE_Z ||
 		mode == Mode::MOVE_XY || mode == Mode::MOVE_YZ || mode == Mode::MOVE_ZX;
+}
+
+bool Editor::isRotationMode(Mode mode) const
+{
+	return mode == Mode::ROTATE_X || mode == Mode::ROTATE_Y || mode == Mode::ROTATE_Z;
 }
 
 bool Editor::leftCtrlDown() const

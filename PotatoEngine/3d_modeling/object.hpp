@@ -51,9 +51,11 @@ public:
 
 	const glm::vec3& getPosition() const;
 	const glm::vec3& getScale() const;
+	const glm::mat3& getBasis() const;
 
 	void setPosition(const glm::vec3& position);
 	void setScale(const glm::vec3& position);
+	void setBasis(const glm::mat3& basis);
 	void rotate(const glm::vec3& axis, float angle);
 
 	void addTag(const std::string& tag);
