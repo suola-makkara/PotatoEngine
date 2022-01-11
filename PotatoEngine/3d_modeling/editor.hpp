@@ -40,6 +40,13 @@ private:
 		ROTATE_X,
 		ROTATE_Y,
 		ROTATE_Z,
+		SCALE,
+		SCALE_X,
+		SCALE_Y,
+		SCALE_Z,
+		SCALE_XY,
+		SCALE_YZ,
+		SCALE_ZX,
 	};
 
 	struct
@@ -50,6 +57,7 @@ private:
 
 	glm::vec3 startPosition;
 	glm::mat3 startBasis;
+	glm::vec3 startScale;
 
 	std::string command;
 
@@ -78,6 +86,7 @@ private:
 
 	bool isMoveMode(Mode mode) const;
 	bool isRotationMode(Mode mode) const;
+	bool isScaleMode(Mode mode) const;
 
 	bool leftCtrlDown() const;
 	bool leftShiftDown() const;

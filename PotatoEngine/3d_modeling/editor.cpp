@@ -12,6 +12,23 @@
 #include <sstream>
 #include <cmath>
 
+// TODO
+/*	
+*** editor core ***
+* - separate local and global transforms
+* - key mappings to commands with config file
+* - separate scene editing and object editing modes
+* - duplicating/copying and creating objects
+* - selected object highlighting
+* - selecting multiple objects
+* - command stack for undo / redo
+* 
+*** rendering ***
+* - add quick normals with geom shaders
+* - add toggle between wireframe and fill
+* 
+*/
+
 void Editor::handleEvent(const Event& event)
 {
 	if (mode != Mode::COMMAND_ENTER)
@@ -51,11 +68,24 @@ void Editor::handleEvent(const Event& event)
 				startBasis = selectedObject->getBasis();
 			}
 			break;
+		case GLFW_KEY_T:
+			if (selectedObject != nullptr)
+			{
+				setMode(Mode::SCALE);
+				startScale = selectedObject->getScale();
+			}
+			break;
 		case GLFW_KEY_X:
 			if (selectedObject != nullptr)
 			{
 				if (mode == Mode::ROTATE)
 					setMode(Mode::ROTATE_X);
+				else if (mode == Mode::SCALE)
+					setMode(Mode::SCALE_X);
+				else if (mode == Mode::SCALE_Y)
+					setMode(Mode::SCALE_XY);
+				else if (mode == Mode::SCALE_Z)
+					setMode(Mode::SCALE_ZX);
 				else if (mode == Mode::MOVE_Y)
 					setMode(Mode::MOVE_XY);
 				else if (mode == Mode::MOVE_Z)
@@ -73,6 +103,12 @@ void Editor::handleEvent(const Event& event)
 			{
 				if (mode == Mode::ROTATE)
 					setMode(Mode::ROTATE_Y);
+				else if (mode == Mode::SCALE)
+					setMode(Mode::SCALE_Y);
+				else if (mode == Mode::SCALE_X)
+					setMode(Mode::SCALE_XY);
+				else if (mode == Mode::SCALE_Z)
+					setMode(Mode::SCALE_YZ);
 				else if (mode == Mode::MOVE_Z)
 					setMode(Mode::MOVE_YZ);
 				else if (mode == Mode::MOVE_X)
@@ -90,6 +126,12 @@ void Editor::handleEvent(const Event& event)
 			{
 				if (mode == Mode::ROTATE)
 					setMode(Mode::ROTATE_Z);
+				else if (mode == Mode::SCALE)
+					setMode(Mode::SCALE_Z);
+				else if (mode == Mode::SCALE_X)
+					setMode(Mode::SCALE_ZX);
+				else if (mode == Mode::SCALE_Y)
+					setMode(Mode::SCALE_YZ);
 				else if (mode == Mode::MOVE_X)
 					setMode(Mode::MOVE_ZX);
 				else if (mode == Mode::MOVE_Y)
@@ -123,7 +165,7 @@ void Editor::handleEvent(const Event& event)
 			auto nnEnd = glm::max(nStart, nEnd);
 			selectedVertices = scene->selectVertices(nnStart, nnEnd - nnStart, camera->getProjViewMat());
 		}
-		else if (isMoveMode(mode) || isRotationMode(mode))
+		else if (isMoveMode(mode) || isRotationMode(mode) || isScaleMode(mode))
 			updateObjectTransform(event.pos);
 		break;
 	case Event::Type::MOUSE_RELEASE:
@@ -210,6 +252,8 @@ void Editor::setMode(Mode mode)
 		selectedObject->setPosition(startPosition);
 	else if (isRotationMode(this->mode) && mode != Mode::AREA_SELECT)
 		selectedObject->setBasis(startBasis);
+	else if (isMoveMode(this->mode) && mode != Mode::AREA_SELECT)
+		selectedObject->setScale(startScale);
 
 	this->mode = mode;
 }
@@ -256,7 +300,7 @@ void Editor::updateObjectTransform(const glm::dvec2& mousePos)
 {
 	auto ray = camera->castRay(screenToNDC(glm::ivec2(mousePos)));
 	
-	if (mode == Mode::ROTATE_X || mode == Mode::ROTATE_Y || mode == Mode::ROTATE_Z)
+	if (isRotationMode(mode))
 	{
 		glm::vec3 axis{};
 		axis[static_cast<int>(mode) - static_cast<int>(Mode::ROTATE_X)] = 1.0f;
@@ -283,6 +327,50 @@ void Editor::updateObjectTransform(const glm::dvec2& mousePos)
 
 		selectedObject->setBasis(startBasis);
 		selectedObject->rotate(axis, std::atan2f(uv.y, uv.x));
+	}
+	else if (isScaleMode(mode))
+	{
+		glm::vec3 newScale;
+
+		const glm::vec3& pos = selectedObject->getPosition();
+
+		if (mode == Mode::SCALE_X || mode == Mode::SCALE_Y || mode == Mode::SCALE_Z)
+		{
+			glm::vec3 axis{};
+			axis[static_cast<int>(mode) - static_cast<int>(Mode::SCALE_X)] = 1.0f;
+			newScale = startScale * (1.0f - axis) + RayUtiles::projectLine(ray, pos, axis) * axis;
+		}
+		else
+		{
+			glm::vec3 u;
+			glm::vec3 v;
+			if (mode == Mode::SCALE_XY)
+			{
+				u = glm::vec3(1, 0, 0);
+				v = glm::vec3(0, 1, 0);
+			}
+			else if (mode == Mode::SCALE_YZ)
+			{
+				u = glm::vec3(0, 1, 0);
+				v = glm::vec3(0, 0, 1);
+			}
+			else
+			{
+				u = glm::vec3(0, 0, 1);
+				v = glm::vec3(1, 0, 0);
+			}
+
+			const glm::vec2 uv = RayUtiles::projectPlane(ray, pos, u, v);
+			newScale = startScale * (1.0f - u - v) + uv.x * u + uv.y * v;
+		}
+
+		if (leftCtrlDown())
+		{
+			const auto delta = newScale - startScale;
+			newScale = startScale + glm::round(delta);
+		}
+
+		selectedObject->setScale(glm::abs(newScale));
 	}
 	else
 	{
@@ -431,6 +519,12 @@ bool Editor::isMoveMode(Mode mode) const
 bool Editor::isRotationMode(Mode mode) const
 {
 	return mode == Mode::ROTATE_X || mode == Mode::ROTATE_Y || mode == Mode::ROTATE_Z;
+}
+
+bool Editor::isScaleMode(Mode mode) const
+{
+	return mode == Mode::SCALE_X || mode == Mode::SCALE_Y || mode == Mode::SCALE_Z ||
+		mode == Mode::SCALE_XY || mode == Mode::SCALE_YZ || mode == Mode::SCALE_ZX;
 }
 
 bool Editor::leftCtrlDown() const
