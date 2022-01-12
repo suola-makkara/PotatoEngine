@@ -22,10 +22,11 @@
 * - selected object highlighting
 * - selecting multiple objects
 * - command stack for undo / redo
+* - orthographic camera views
+* - reference grid
 * 
 *** rendering ***
 * - add quick normals with geom shaders
-* - add toggle between wireframe and fill
 * 
 */
 
@@ -60,6 +61,10 @@ void Editor::handleEvent(const Event& event)
 			}
 			else if (isMoveMode(mode))
 				startPosition = selectedObject->getPosition();
+			break;
+		case GLFW_KEY_H:
+			scene->setRenderMode(scene->getRenderMode() == Object::RenderMode::DEFAULT ?
+				Object::RenderMode::WIRE_FRAME : Object::RenderMode::DEFAULT);
 			break;
 		case GLFW_KEY_R:
 			if (selectedObject != nullptr)

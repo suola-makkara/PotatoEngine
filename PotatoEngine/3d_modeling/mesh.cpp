@@ -64,7 +64,6 @@ void Mesh::render(const Camera* camera) const
 {
 	shader->use();
 	shader->set("uProjView", camera->getProjViewMat());
-	//shader->set("uPosition", position);
 	shader->set("uModel", getTransform());
 	shader->set("uColor", glm::vec4(color, 1.0));
 
@@ -72,11 +71,16 @@ void Mesh::render(const Camera* camera) const
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	if (renderMode == RenderMode::WIRE_FRAME)
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	else
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	glBindVertexArray(vao);
-	//glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_INT, 0);
-	glDrawElements(GL_LINES, elements, GL_UNSIGNED_INT, 0);
+	if (renderMode == RenderMode::WIRE_FRAME)
+		glDrawElements(GL_LINES, elements, GL_UNSIGNED_INT, 0);
+	else
+		glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 
 	glUseProgram(0);
@@ -140,6 +144,12 @@ std::list<Object::ObjectRef> Mesh::selectObjects(const Ray& ray)
 	}
 
 	return objs;
+}
+
+void Mesh::setRenderMode(RenderMode mode)
+{
+	Object::setRenderMode(mode);
+	updateElementBuffer();
 }
 
 std::vector<glm::vec3> Mesh::getVertices(const std::vector<unsigned>& indices) const
@@ -360,23 +370,28 @@ void Mesh::updateVertexBuffer()
 void Mesh::updateElementBuffer()
 {
 	std::vector<unsigned> indices;
-	//for (const auto& face : faces)
-	//{
-	//	unsigned first = face[0];
-	//	unsigned prev = face[1];
-	//	for (int i = 2; i < face.size(); i++)
-	//	{
-	//		indices.push_back(first);
-	//		indices.push_back(prev);
-	//		indices.push_back(face[i]);
-	//		prev = face[i];
-	//	}
-	//}
-
-	for (const auto& edge : edges)
+	if (renderMode == RenderMode::DEFAULT)
 	{
-		indices.push_back(edge.x);
-		indices.push_back(edge.y);
+		for (const auto& face : faces)
+		{
+			unsigned first = face[0];
+			unsigned prev = face[1];
+			for (int i = 2; i < face.size(); i++)
+			{
+				indices.push_back(first);
+				indices.push_back(prev);
+				indices.push_back(face[i]);
+				prev = face[i];
+			}
+		}
+	}
+	else
+	{
+		for (const auto& edge : edges)
+		{
+			indices.push_back(edge.x);
+			indices.push_back(edge.y);
+		}
 	}
 
 	elements = static_cast<unsigned>(indices.size());

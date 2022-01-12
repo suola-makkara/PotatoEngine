@@ -14,6 +14,12 @@ class Camera;
 class Object
 {
 public:
+	enum class RenderMode
+	{
+		DEFAULT,
+		WIRE_FRAME,
+	};
+
 	struct VertexRef
 	{
 		Object* object{};
@@ -44,6 +50,9 @@ public:
 
 	virtual std::list<ObjectRef> selectObjects(const Ray& ray);
 
+	virtual void setRenderMode(RenderMode mode);
+	RenderMode getRenderMode() const;
+
 	void add(Object* object);
 	void remove(Object* object);
 
@@ -70,6 +79,8 @@ protected:
 	glm::vec3 position{};
 	glm::vec3 scale{ 1.0f };
 	glm::mat3 basis{ 1.0f };
+
+	RenderMode renderMode = RenderMode::DEFAULT;
 
 	Object* parent = nullptr;
 

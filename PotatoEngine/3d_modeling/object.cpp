@@ -17,6 +17,7 @@ Object& Object::operator=(Object&& obj) noexcept
 	parent = obj.parent;
 	children = std::move(obj.children);
 	tags = std::move(obj.tags);
+	renderMode = obj.renderMode;
 
 	obj.parent = nullptr;
 
@@ -57,6 +58,19 @@ std::list<Object::ObjectRef> Object::selectObjects(const Ray& ray)
 	}
 
 	return objs;
+}
+
+void Object::setRenderMode(RenderMode mode)
+{
+	for (auto child : children)
+		child->setRenderMode(mode);
+
+	renderMode = mode;
+}
+
+Object::RenderMode Object::getRenderMode() const
+{
+	return renderMode;
 }
 
 void Object::add(Object* object)

@@ -26,6 +26,8 @@ public:
 
 	std::list<ObjectRef>selectObjects(const Ray& ray) override;
 
+	void setRenderMode(RenderMode mode) override;
+
 	std::vector<glm::vec3> getVertices(const std::vector<unsigned>& indices) const;
 
 	void deleteVertices(const std::vector<unsigned>& indices);
