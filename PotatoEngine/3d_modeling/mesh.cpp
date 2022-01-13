@@ -7,8 +7,8 @@
 
 #include <unordered_map>
 
-Mesh::Mesh(Shader* shader)
-	: shader(shader), elements(0)
+Mesh::Mesh(Shader* fillShader, Shader* wireframeShader)
+	: fillShader(fillShader), wireframeShader(wireframeShader), elements(0)
 {
 	glGenBuffers(1, &vbo);
 	glGenBuffers(1, &ebo);
@@ -48,13 +48,15 @@ Mesh& Mesh::operator=(Mesh&& mesh) noexcept
 	vbo = mesh.vbo;
 	vao = mesh.vao;
 	ebo = mesh.ebo;
-	shader = mesh.shader;
+	fillShader = mesh.fillShader;
+	wireframeShader = mesh.wireframeShader;
 	elements = mesh.elements;
 
 	mesh.vbo = 0;
 	mesh.vao = 0;
 	mesh.ebo = 0;
-	mesh.shader = nullptr;
+	mesh.fillShader = nullptr;
+	mesh.wireframeShader = nullptr;
 	mesh.elements = 0;
 
 	return *this;
@@ -62,19 +64,19 @@ Mesh& Mesh::operator=(Mesh&& mesh) noexcept
 
 void Mesh::render(const Camera* camera) const
 {
+	auto shader = renderMode == RenderMode::DEFAULT ? fillShader : wireframeShader;
+
 	shader->use();
 	shader->set("uProjView", camera->getProjViewMat());
 	shader->set("uModel", getTransform());
 	shader->set("uColor", glm::vec4(color, 1.0));
 
 	glEnable(GL_DEPTH_TEST);
-	//glEnable(GL_CULL_FACE);
-	//glCullFace(GL_BACK);
 
-	if (renderMode == RenderMode::WIRE_FRAME)
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	else
+	if (renderMode == RenderMode::DEFAULT)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	else
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	glBindVertexArray(vao);
 	if (renderMode == RenderMode::WIRE_FRAME)
@@ -242,9 +244,9 @@ glm::vec3 Mesh::getCenter() const
 	return glm::vec3(tr * glm::vec4(center, 1.0f));
 }
 
-Mesh Mesh::cube(Shader* shader)
+Mesh Mesh::cube(Shader* fillShader, Shader* wireframeShader)
 {
-	Mesh mesh(shader);
+	Mesh mesh(fillShader, wireframeShader);
 
 	static const std::vector<glm::vec3> dataV
 	{
@@ -277,9 +279,9 @@ Mesh Mesh::cube(Shader* shader)
 	return mesh;
 }
 
-Mesh Mesh::cone(Shader* shader)
+Mesh Mesh::cone(Shader* fillShader, Shader* wireframeShader)
 {
-	Mesh mesh(shader);
+	Mesh mesh(fillShader, wireframeShader);
 
 	static const int steps = 10;
 	std::vector<std::vector<unsigned>> nFaces;
@@ -308,9 +310,9 @@ Mesh Mesh::cone(Shader* shader)
 	return mesh;
 }
 
-Mesh Mesh::cylinder(Shader* shader)
+Mesh Mesh::cylinder(Shader* fillShader, Shader* wireframeShader)
 {
-	Mesh mesh(shader);
+	Mesh mesh(fillShader, wireframeShader);
 
 	static const int steps = 10;
 	std::vector<std::vector<unsigned>> nFaces;

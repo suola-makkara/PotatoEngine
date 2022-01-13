@@ -119,20 +119,20 @@ void EditorDrawUtils::init()
 	glBindVertexArray(0);
 
 	selector = new Object();
-	auto cyl = new Mesh(Mesh::cylinder(&vertexShader));
+	auto cyl = new Mesh(Mesh::cylinder(&vertexShader, &vertexShader));
 	cyl->setScale(glm::vec3(0.1f, 1.0f, 0.1f));
 	cyl->color = glm::vec3(0, 1, 0);
 	cyl->setPosition(glm::vec3(0, 0.5f, 0));
 	cyl->addTag("y");
 	selector->add(cyl);
-	cyl = new Mesh(Mesh::cylinder(&vertexShader));
+	cyl = new Mesh(Mesh::cylinder(&vertexShader, &vertexShader));
 	cyl->setScale(glm::vec3(0.1f, 1.0f, 0.1f));
 	cyl->rotate(glm::vec3(0, 0, 1), glm::half_pi<float>());
 	cyl->color = glm::vec3(1, 0, 0);
 	cyl->setPosition(glm::vec3(0.5f, 0, 0));
 	cyl->addTag("x");
 	selector->add(cyl);
-	cyl = new Mesh(Mesh::cylinder(&vertexShader));
+	cyl = new Mesh(Mesh::cylinder(&vertexShader, &vertexShader));
 	cyl->setScale(glm::vec3(0.1f, 1.0f, 0.1f));
 	cyl->rotate(glm::vec3(1, 0, 0), glm::half_pi<float>());
 	cyl->color = glm::vec3(0, 0, 1);
@@ -140,21 +140,21 @@ void EditorDrawUtils::init()
 	cyl->addTag("z");
 	selector->add(cyl);
 
-	auto cone = new Mesh(Mesh::cone(&vertexShader));
+	auto cone = new Mesh(Mesh::cone(&vertexShader, &vertexShader));
 	cone->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
 	cone->rotate(glm::vec3(1, 0, 0), glm::half_pi<float>());
 	cone->color = glm::vec3(0, 0, 1);
 	cone->setPosition(glm::vec3(0, 0, 1.0f));
 	cone->addTag("z");
 	selector->add(cone);
-	cone = new Mesh(Mesh::cone(&vertexShader));
+	cone = new Mesh(Mesh::cone(&vertexShader, &vertexShader));
 	cone->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
 	cone->rotate(glm::vec3(0, 0, -1), glm::half_pi<float>());
 	cone->color = glm::vec3(1, 0, 0);
 	cone->setPosition(glm::vec3(1.0f, 0, 0));
 	cone->addTag("x");
 	selector->add(cone);
-	cone = new Mesh(Mesh::cone(&vertexShader));
+	cone = new Mesh(Mesh::cone(&vertexShader, &vertexShader));
 	cone->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
 	cone->color = glm::vec3(0, 1, 0);
 	cone->setPosition(glm::vec3(0, 1.0f, 0));

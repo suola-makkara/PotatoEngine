@@ -19,6 +19,9 @@ public:
 
 	Shader(const std::string& vertexShaderSourceFile, const std::string& fragmentShaderSourceFile);
 
+	Shader(const std::string& vertexShaderSourceFile, const std::string& geometryShaderSourceFile,
+		const std::string& fragmentShaderSourceFile);
+
 	Shader(const std::string& vertexShaderSourceFile, const std::string& tessCtrlShaderSourceFile,
 		const std::string& tessEvalShaderSourceFile, const std::string& fragmentShaderSourceFile);
 

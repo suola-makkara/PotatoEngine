@@ -277,18 +277,19 @@ void Editor::unselectObject()
 
 Editor::Editor(GLFWwindow* window) : window(window)
 {
-	shader = Shader("shaders/vtest.glsl", "shaders/fcolor.glsl");
+	shader = Shader("shaders/vbasic.glsl", "shaders/gnormals.glsl", "shaders/fbasic.glsl");
+	wireframeShader = Shader("shaders/vtest.glsl", "shaders/fcolor.glsl");
 
 	scene = new Object();
 	for (int i = 0; i < 10; i++)
 	{
-		Mesh* mesh = new Mesh(Mesh::cylinder(&shader));
+		Mesh* mesh = new Mesh(Mesh::cylinder(&shader, &wireframeShader));
 		mesh->setPosition(glm::vec3(3 * i, 0, 0));
 		scene->add(mesh);
-		mesh = new Mesh(Mesh::cone(&shader));
+		mesh = new Mesh(Mesh::cone(&shader, &wireframeShader));
 		mesh->setPosition(glm::vec3(3 * i, 0, 2));
 		scene->add(mesh);
-		mesh = new Mesh(Mesh::cube(&shader));
+		mesh = new Mesh(Mesh::cube(&shader, &wireframeShader));
 		mesh->setScale(glm::vec3(static_cast<float>(i + 1) / 10.0f, 1.0f, 1.0f));
 		mesh->setPosition(glm::vec3(3 * i, 0, 4));
 		mesh->rotate(glm::vec3(1, 0, 0), i / 5.0f);

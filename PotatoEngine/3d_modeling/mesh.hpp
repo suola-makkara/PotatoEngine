@@ -11,7 +11,7 @@
 class Mesh : public Object
 {
 public:
-	Mesh(Shader* shader);
+	Mesh(Shader* fillShader, Shader* wireframeShader);
 	Mesh(const Mesh&) = delete;
 	Mesh(Mesh&& mesh) noexcept;
 
@@ -34,18 +34,19 @@ public:
 
 	glm::vec3 getCenter() const;
 
-	static Mesh cube(Shader* shader);
+	static Mesh cube(Shader* fillShader, Shader* wireframeShader);
 
-	static Mesh cone(Shader* shader);
+	static Mesh cone(Shader* fillShader, Shader* wireframeShader);
 
-	static Mesh cylinder(Shader* shader);
+	static Mesh cylinder(Shader* fillShader, Shader* wireframeShader);
 
 	static const glm::vec3 BASE_COLOR;
 	static const glm::vec3 SELECTED_COLOR;
 
 	glm::vec3 color = BASE_COLOR;
 protected:
-	Shader* shader;
+	Shader* fillShader;
+	Shader* wireframeShader;
 
 	std::vector<glm::vec3> vertices;
 	std::list<std::vector<unsigned>> faces;

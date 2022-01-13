@@ -20,6 +20,7 @@ public:
 private:
 	Object* scene;
 	Shader shader;
+	Shader wireframeShader;
 	Camera* camera;
 
 	GLFWwindow* window;
