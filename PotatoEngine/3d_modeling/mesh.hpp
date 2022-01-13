@@ -40,7 +40,10 @@ public:
 
 	static Mesh cylinder(Shader* shader);
 
-	glm::vec3 color{ 0.3f };
+	static const glm::vec3 BASE_COLOR;
+	static const glm::vec3 SELECTED_COLOR;
+
+	glm::vec3 color = BASE_COLOR;
 protected:
 	Shader* shader;
 

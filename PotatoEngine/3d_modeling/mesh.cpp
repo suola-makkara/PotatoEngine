@@ -399,3 +399,6 @@ void Mesh::updateElementBuffer()
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(unsigned), indices.data(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
+
+const glm::vec3 Mesh::BASE_COLOR = glm::vec3(0.3f);
+const glm::vec3 Mesh::SELECTED_COLOR = glm::vec3(0.0f, 0.0f, 0.6f);

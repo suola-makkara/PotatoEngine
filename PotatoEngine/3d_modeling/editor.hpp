@@ -66,6 +66,9 @@ private:
 	void setMode(Mode mode);
 
 	std::list<Object::VertexRef> selectedVertices{};
+
+	void selectObject(Object* object);
+	void unselectObject();
 	Object* selectedObject = nullptr;
 
 	Editor(GLFWwindow* window);

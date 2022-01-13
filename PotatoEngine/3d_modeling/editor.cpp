@@ -185,15 +185,15 @@ void Editor::handleEvent(const Event& event)
 				{
 					Object::ObjectRef::sort(objs);
 					if (objs.front().object == selectedObject)
-						selectedObject = nullptr;
+						unselectObject();
 					else
-						selectedObject = objs.front().object;
+						selectObject(objs.front().object);
 				}
 				else
-					selectedObject = nullptr;
+					unselectObject();
 			}
 			else
-				selectedObject = nullptr;
+				unselectObject();
 		}
 		break;
 	case Event::Type::CHAR:
@@ -223,9 +223,6 @@ void Editor::render()
 	for (const auto& vertRef : selectedVertices)
 		EditorDrawUtils::drawVertices(dynamic_cast<Mesh*>(vertRef.object)->getVertices(vertRef.vertexIndices), camera->getProjViewMat());
 	
-	if (selectedObject != nullptr)
-		EditorDrawUtils::drawSelector(dynamic_cast<Mesh*>(selectedObject)->getCenter(), camera);
-
 	switch (mode)
 	{
 	case Editor::Mode::AREA_SELECT:
@@ -257,10 +254,25 @@ void Editor::setMode(Mode mode)
 		selectedObject->setPosition(startPosition);
 	else if (isRotationMode(this->mode) && mode != Mode::AREA_SELECT)
 		selectedObject->setBasis(startBasis);
-	else if (isMoveMode(this->mode) && mode != Mode::AREA_SELECT)
+	else if (isScaleMode(this->mode) && mode != Mode::AREA_SELECT)
 		selectedObject->setScale(startScale);
 
 	this->mode = mode;
+}
+
+void Editor::selectObject(Object* object)
+{
+	if (selectedObject != nullptr)
+		dynamic_cast<Mesh*>(selectedObject)->color = Mesh::BASE_COLOR;
+
+	selectedObject = object;
+	if (selectedObject != nullptr)
+		dynamic_cast<Mesh*>(selectedObject)->color = Mesh::SELECTED_COLOR;
+}
+
+void Editor::unselectObject()
+{
+	selectObject(nullptr);
 }
 
 Editor::Editor(GLFWwindow* window) : window(window)
