@@ -56,6 +56,8 @@ public:
 	void add(Object* object);
 	void remove(Object* object);
 
+	virtual Object* copy() const;
+
 	const glm::mat4& getTransform() const;
 
 	const glm::vec3& getPosition() const;

@@ -148,6 +148,33 @@ std::list<Object::ObjectRef> Mesh::selectObjects(const Ray& ray)
 	return objs;
 }
 
+Object* Mesh::copy() const
+{
+	Mesh* mesh = new Mesh(this->fillShader, this->wireframeShader);
+
+	mesh->vertices = vertices;
+	mesh->faces = faces;
+	mesh->edges = edges;
+	mesh->elements = elements;
+
+	mesh->updateVertexBuffer();
+	mesh->updateElementBuffer();
+
+	mesh->transformCache = transformCache;
+	mesh->transformed = transformed;
+	mesh->position = position;
+	mesh->scale = scale;
+	mesh->basis = basis;
+	mesh->parent = parent;
+	mesh->tags = tags;
+	mesh->renderMode = renderMode;
+
+	for (auto child : children)
+		mesh->children.push_back(child->copy());
+
+	return mesh;
+}
+
 void Mesh::setRenderMode(RenderMode mode)
 {
 	Object::setRenderMode(mode);

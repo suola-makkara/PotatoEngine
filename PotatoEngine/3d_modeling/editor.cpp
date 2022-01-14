@@ -18,15 +18,28 @@
 * - separate local and global transforms
 * - key mappings to commands with config file
 * - separate scene editing and object editing modes
-* - duplicating/copying and creating objects
-* - selected object highlighting
-* - selecting multiple objects
+* - selecting multiple objects / verts
 * - command stack for undo / redo
 * - orthographic camera views
 * - reference grid
+* -
+* 
+*** object editor ***
+* - duplicating/copying and creating objects
+* -
+* 
+*** vertex editor ***
+* - selecting face / edges
+* - single vertex selection
+* - pass through selection toggle
+* - moving vertices
+* - face subdivision
+* - vertex snapping / edge collapsing
+* -
 * 
 *** rendering ***
-* - add quick normals with geom shaders
+* - lights
+* -
 * 
 */
 
@@ -61,6 +74,10 @@ void Editor::handleEvent(const Event& event)
 			}
 			else if (isMoveMode(mode))
 				startPosition = selectedObject->getPosition();
+			break;
+		case GLFW_KEY_M:
+			if (selectedObject != nullptr)
+				scene->add(selectedObject->copy());
 			break;
 		case GLFW_KEY_H:
 			scene->setRenderMode(scene->getRenderMode() == Object::RenderMode::DEFAULT ?

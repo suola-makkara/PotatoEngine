@@ -91,6 +91,24 @@ void Object::remove(Object* object)
 		}
 }
 
+Object* Object::copy() const
+{
+	Object* obj = new Object();
+	obj->transformCache = transformCache;
+	obj->transformed = transformed;
+	obj->position = position;
+	obj->scale = scale;
+	obj->basis = basis;
+	obj->parent = parent;
+	obj->tags = tags;
+	obj->renderMode = renderMode;
+
+	for (auto child : children)
+		obj->children.push_back(child->copy());
+
+	return obj;
+}
+
 const glm::mat4& Object::getTransform() const
 {
 	if (transformed)
