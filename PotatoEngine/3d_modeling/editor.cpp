@@ -17,7 +17,6 @@
 *** editor core ***
 * - separate local and global transforms
 * - key mappings to commands with config file
-* - separate scene editing and object editing modes
 * - selecting multiple objects / verts
 * - command stack for undo / redo
 * - orthographic camera views
@@ -25,7 +24,7 @@
 * -
 * 
 *** object editor ***
-* - duplicating/copying and creating objects
+* - Object deletion
 * -
 * 
 *** vertex editor ***
@@ -58,13 +57,17 @@ void Editor::handleEvent(const Event& event)
 		{
 		case GLFW_KEY_ESCAPE:
 			setMode(Mode::NONE);
-			selectedVertices.clear();
+			if (editMode == EditMode::VERTEX)
+				selectedVertices.clear();
 			break;
 		case GLFW_KEY_DELETE:
 			setMode(Mode::NONE);
-			for (auto& vertRef : selectedVertices)
-				dynamic_cast<Mesh*>(vertRef.object)->deleteVertices(vertRef.vertexIndices);
-			selectedVertices.clear();
+			if (editMode == EditMode::VERTEX)
+			{
+				for (auto& vertRef : selectedVertices)
+					dynamic_cast<Mesh*>(vertRef.object)->deleteVertices(vertRef.vertexIndices);
+				selectedVertices.clear();
+			}
 			break;
 		case GLFW_KEY_ENTER:
 			if (mode == Mode::COMMAND_ENTER)
@@ -72,11 +75,13 @@ void Editor::handleEvent(const Event& event)
 				setMode(Mode::NONE);
 				executeCommand();
 			}
-			else if (isMoveMode(mode))
+			else if (editMode == EditMode::OBJECT && isMoveMode(mode))
 				startPosition = selectedObject->getPosition();
 			break;
+		case GLFW_KEY_O:
+			setEditMode(editMode == EditMode::OBJECT ? EditMode::VERTEX : EditMode::OBJECT);
 		case GLFW_KEY_M:
-			if (selectedObject != nullptr)
+			if (editMode == EditMode::OBJECT && selectedObject != nullptr)
 				scene->add(selectedObject->copy());
 			break;
 		case GLFW_KEY_H:
@@ -84,21 +89,21 @@ void Editor::handleEvent(const Event& event)
 				Object::RenderMode::WIRE_FRAME : Object::RenderMode::DEFAULT);
 			break;
 		case GLFW_KEY_R:
-			if (selectedObject != nullptr)
+			if (editMode == EditMode::OBJECT && selectedObject != nullptr)
 			{
 				setMode(Mode::ROTATE);
 				startBasis = selectedObject->getBasis();
 			}
 			break;
 		case GLFW_KEY_T:
-			if (selectedObject != nullptr)
+			if (editMode == EditMode::OBJECT && selectedObject != nullptr)
 			{
 				setMode(Mode::SCALE);
 				startScale = selectedObject->getScale();
 			}
 			break;
 		case GLFW_KEY_X:
-			if (selectedObject != nullptr)
+			if (editMode == EditMode::OBJECT && selectedObject != nullptr)
 			{
 				if (mode == Mode::ROTATE)
 					setMode(Mode::ROTATE_X);
@@ -121,7 +126,7 @@ void Editor::handleEvent(const Event& event)
 			}
 			break;
 		case GLFW_KEY_Y:
-			if (selectedObject != nullptr)
+			if (editMode == EditMode::OBJECT && selectedObject != nullptr)
 			{
 				if (mode == Mode::ROTATE)
 					setMode(Mode::ROTATE_Y);
@@ -144,7 +149,7 @@ void Editor::handleEvent(const Event& event)
 			}
 			break;
 		case GLFW_KEY_Z:
-			if (selectedObject != nullptr)
+			if (editMode == EditMode::OBJECT && selectedObject != nullptr)
 			{
 				if (mode == Mode::ROTATE)
 					setMode(Mode::ROTATE_Z);
@@ -181,13 +186,17 @@ void Editor::handleEvent(const Event& event)
 		if (mode == Mode::AREA_SELECT)
 		{
 			areaSelect.end = glm::ivec2(event.pos);
-			auto nStart = screenToNDC(areaSelect.start);
-			auto nEnd = screenToNDC(areaSelect.end);
-			auto nnStart = glm::min(nStart, nEnd);
-			auto nnEnd = glm::max(nStart, nEnd);
-			selectedVertices = scene->selectVertices(nnStart, nnEnd - nnStart, camera->getProjViewMat());
+
+			if (editMode == EditMode::VERTEX)
+			{
+				auto nStart = screenToNDC(areaSelect.start);
+				auto nEnd = screenToNDC(areaSelect.end);
+				auto nnStart = glm::min(nStart, nEnd);
+				auto nnEnd = glm::max(nStart, nEnd);
+				selectedVertices = scene->selectVertices(nnStart, nnEnd - nnStart, camera->getProjViewMat());
+			}
 		}
-		else if (isMoveMode(mode) || isRotationMode(mode) || isScaleMode(mode))
+		else if (editMode == EditMode::OBJECT && (isMoveMode(mode) || isRotationMode(mode) || isScaleMode(mode)))
 			updateObjectTransform(event.pos);
 		break;
 	case Event::Type::MOUSE_RELEASE:
@@ -195,22 +204,26 @@ void Editor::handleEvent(const Event& event)
 		{
 			setMode(Mode::NONE);
 			areaSelect.end = glm::ivec2(event.pos);
-			if (areaSelect.start == areaSelect.end)
+
+			if (editMode == EditMode::OBJECT)
 			{
-				auto objs = scene->selectObjects(camera->castRay(screenToNDC(areaSelect.start)));
-				if (!objs.empty())
+				if (areaSelect.start == areaSelect.end)
 				{
-					Object::ObjectRef::sort(objs);
-					if (objs.front().object == selectedObject)
-						unselectObject();
+					auto objs = scene->selectObjects(camera->castRay(screenToNDC(areaSelect.start)));
+					if (!objs.empty())
+					{
+						Object::ObjectRef::sort(objs);
+						if (objs.front().object == selectedObject)
+							unselectObject();
+						else
+							selectObject(objs.front().object);
+					}
 					else
-						selectObject(objs.front().object);
+						unselectObject();
 				}
 				else
 					unselectObject();
 			}
-			else
-				unselectObject();
 		}
 		break;
 	case Event::Type::CHAR:
@@ -275,6 +288,18 @@ void Editor::setMode(Mode mode)
 		selectedObject->setScale(startScale);
 
 	this->mode = mode;
+}
+
+void Editor::setEditMode(EditMode mode)
+{
+	setMode(Mode::NONE);
+
+	if (editMode == EditMode::OBJECT)
+		unselectObject();
+	else if (editMode == EditMode::VERTEX)
+		selectedVertices.clear();
+
+	editMode = mode;
 }
 
 void Editor::selectObject(Object* object)

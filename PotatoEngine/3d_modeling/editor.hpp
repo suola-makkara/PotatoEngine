@@ -26,6 +26,14 @@ private:
 	GLFWwindow* window;
 	glm::ivec2 windowSize;
 
+	enum class EditMode
+	{
+		OBJECT,
+		VERTEX,
+	};
+
+	EditMode editMode = EditMode::OBJECT;
+
 	enum class Mode
 	{
 		NONE,
@@ -65,6 +73,8 @@ private:
 	Mode mode = Mode::NONE;
 
 	void setMode(Mode mode);
+
+	void setEditMode(EditMode mode);
 
 	std::list<Object::VertexRef> selectedVertices{};
 
