@@ -248,7 +248,7 @@ void Editor::update(float dt)
 
 void Editor::render()
 {
-	scene->render(camera);
+	scene->render(camera.get());
 
 	for (const auto& vertRef : selectedVertices)
 		EditorDrawUtils::drawVertices(dynamic_cast<Mesh*>(vertRef.object)->getVertices(vertRef.vertexIndices), camera->getProjViewMat());
@@ -322,37 +322,32 @@ Editor::Editor(GLFWwindow* window) : window(window)
 	shader = Shader("shaders/vbasic.glsl", "shaders/gnormals.glsl", "shaders/fbasic.glsl");
 	wireframeShader = Shader("shaders/vtest.glsl", "shaders/fcolor.glsl");
 
-	scene = new Object();
+	scene = std::make_unique<Object>();
 	for (int i = 0; i < 10; i++)
 	{
-		Mesh* mesh = new Mesh(Mesh::cylinder(&shader, &wireframeShader));
+		auto mesh = Mesh::cylinder(&shader, &wireframeShader);
 		mesh->setPosition(glm::vec3(3 * i, 0, 0));
-		scene->add(mesh);
-		mesh = new Mesh(Mesh::cone(&shader, &wireframeShader));
+		scene->add(std::move(mesh));
+		mesh = Mesh::cone(&shader, &wireframeShader);
 		mesh->setPosition(glm::vec3(3 * i, 0, 2));
-		scene->add(mesh);
-		mesh = new Mesh(Mesh::cube(&shader, &wireframeShader));
+		scene->add(std::move(mesh));
+		mesh = Mesh::cube(&shader, &wireframeShader);
 		mesh->setScale(glm::vec3(static_cast<float>(i + 1) / 10.0f, 1.0f, 1.0f));
 		mesh->setPosition(glm::vec3(3 * i, 0, 4));
 		mesh->rotate(glm::vec3(1, 0, 0), i / 5.0f);
-		scene->add(mesh);
+		scene->add(std::move(mesh));
 	}
 
 	//scene->rotate(glm::vec3(0, 1, 0), 1.5f);
 
 	glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
-	camera = new MovingCamera(glm::vec3(0, 0, 2), static_cast<float>(windowSize.x) / windowSize.y);
-	//dynamic_cast<MovingCamera*>(camera)->far = 1000.0f;
-	//dynamic_cast<MovingCamera*>(camera)->movementSpeed = 0.1f;
+	camera = std::make_unique<MovingCamera>(glm::vec3(0, 0, 2), static_cast<float>(windowSize.x) / windowSize.y);
 
 	EditorDrawUtils::init();
 }
 
 Editor::~Editor()
 {
-	delete scene;
-	delete camera;
-
 	EditorDrawUtils::deinit();
 }
 

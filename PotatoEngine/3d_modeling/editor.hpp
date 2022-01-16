@@ -6,6 +6,8 @@
 
 #include "GLFW/glfw3.h"
 
+#include <memory>
+
 class Editor
 {
 public:
@@ -18,10 +20,11 @@ public:
 	static Editor& get(GLFWwindow* window);
 
 private:
-	Object* scene;
+	std::unique_ptr<Object> scene;
+	std::unique_ptr<Camera> camera;
+
 	Shader shader;
 	Shader wireframeShader;
-	Camera* camera;
 
 	GLFWwindow* window;
 	glm::ivec2 windowSize;

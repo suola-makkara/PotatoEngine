@@ -36,13 +36,6 @@ Mesh::Mesh(Mesh&& mesh) noexcept
 	Mesh::operator=(std::move(mesh));
 }
 
-Mesh::~Mesh()
-{
-	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ebo);
-	glDeleteVertexArrays(1, &vao);
-}
-
 Mesh& Mesh::operator=(const Mesh& mesh)
 {
 	Object::operator=(mesh);
@@ -89,6 +82,13 @@ Mesh& Mesh::operator=(Mesh&& mesh) noexcept
 	mesh.elements = 0;
 
 	return *this;
+}
+
+Mesh::~Mesh()
+{
+	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &ebo);
+	glDeleteVertexArrays(1, &vao);
 }
 
 void Mesh::render(const Camera* camera) const
@@ -177,9 +177,9 @@ std::list<Object::ObjectRef> Mesh::selectObjects(const Ray& ray)
 	return objs;
 }
 
-Object* Mesh::copy() const
+std::unique_ptr<Object> Mesh::copy() const
 {
-	return new Mesh(*this);
+	return std::unique_ptr<Mesh>(new Mesh(*this));
 }
 
 void Mesh::setRenderMode(RenderMode mode)
@@ -278,9 +278,9 @@ glm::vec3 Mesh::getCenter() const
 	return glm::vec3(tr * glm::vec4(center, 1.0f));
 }
 
-Mesh Mesh::cube(Shader* fillShader, Shader* wireframeShader)
+std::unique_ptr<Mesh> Mesh::cube(Shader* fillShader, Shader* wireframeShader)
 {
-	Mesh mesh(fillShader, wireframeShader);
+	std::unique_ptr<Mesh> mesh = std::make_unique<Mesh>(fillShader, wireframeShader);
 
 	static const std::vector<glm::vec3> dataV
 	{
@@ -304,49 +304,46 @@ Mesh Mesh::cube(Shader* fillShader, Shader* wireframeShader)
 		{2, 6, 5, 3}
 	};
 
-	mesh.vertices.insert(mesh.vertices.begin(), dataV.begin(), dataV.end());
-	mesh.addFaces(dataF);
+	mesh->vertices.insert(mesh->vertices.begin(), dataV.begin(), dataV.end());
+	mesh->addFaces(dataF);
 
-	mesh.updateVertexBuffer();
-	mesh.updateElementBuffer();
+	mesh->updateVertexBuffer();
+	mesh->updateElementBuffer();
 
 	return mesh;
 }
 
-Mesh Mesh::cone(Shader* fillShader, Shader* wireframeShader)
+std::unique_ptr<Mesh> Mesh::cone(Shader* fillShader, Shader* wireframeShader)
 {
-	Mesh mesh(fillShader, wireframeShader);
+	std::unique_ptr<Mesh> mesh = std::make_unique<Mesh>(fillShader, wireframeShader);
 
 	static const int steps = 10;
 	std::vector<std::vector<unsigned>> nFaces;
 	glm::vec3 top = glm::vec3(0, 0.5f, 0);
-	//glm::vec3 bottom = glm::vec3(0, -0.5f, 0);
-	mesh.vertices.push_back(top);
-	//mesh.vertices.push_back(bottom);
+	mesh->vertices.push_back(top);
 	std::vector<unsigned> bottomFace;
 	for (int i = 0; i < steps; i++)
 	{
 		float x = 0.5f * glm::cos(glm::two_pi<float>() * i / steps);
 		float y = 0.5f * glm::sin(glm::two_pi<float>() * i / steps);
 		glm::vec3 pos = glm::vec3(x, -0.5f, y);
-		mesh.vertices.push_back(pos);
+		mesh->vertices.push_back(pos);
 		nFaces.push_back(std::vector<unsigned>{0, static_cast<unsigned>(i + 1 == steps ? 1 : i + 2), static_cast<unsigned>(i + 1)});
 		bottomFace.push_back(i + 1);
-		//nFaces.push_back(std::vector<unsigned>{1, static_cast<unsigned>(i + 2), static_cast<unsigned>(i + 1 == steps ? 2 : i + 3)});
 	}
 	nFaces.push_back(std::move(bottomFace));
 
-	mesh.addFaces(nFaces);
+	mesh->addFaces(nFaces);
 
-	mesh.updateVertexBuffer();
-	mesh.updateElementBuffer();
+	mesh->updateVertexBuffer();
+	mesh->updateElementBuffer();
 
 	return mesh;
 }
 
-Mesh Mesh::cylinder(Shader* fillShader, Shader* wireframeShader)
+std::unique_ptr<Mesh> Mesh::cylinder(Shader* fillShader, Shader* wireframeShader)
 {
-	Mesh mesh(fillShader, wireframeShader);
+	std::unique_ptr<Mesh> mesh = std::make_unique<Mesh>(fillShader, wireframeShader);
 
 	static const int steps = 10;
 	std::vector<std::vector<unsigned>> nFaces;
@@ -358,8 +355,8 @@ Mesh Mesh::cylinder(Shader* fillShader, Shader* wireframeShader)
 		float y = 0.5f * glm::sin(glm::two_pi<float>() * i / steps);
 		glm::vec3 posTop = glm::vec3(x, 0.5f, y);
 		glm::vec3 posBottom = glm::vec3(x, -0.5f, y);
-		mesh.vertices.push_back(posTop);
-		mesh.vertices.push_back(posBottom);
+		mesh->vertices.push_back(posTop);
+		mesh->vertices.push_back(posBottom);
 		topFace.push_back(2 * i);
 		bottomFace.push_back(2 * i + 1);
 		nFaces.push_back(std::vector<unsigned>{
@@ -373,10 +370,10 @@ Mesh Mesh::cylinder(Shader* fillShader, Shader* wireframeShader)
 	nFaces.push_back(std::move(topFace));
 	nFaces.push_back(std::move(bottomFace));
 
-	mesh.addFaces(nFaces);
+	mesh->addFaces(nFaces);
 
-	mesh.updateVertexBuffer();
-	mesh.updateElementBuffer();
+	mesh->updateVertexBuffer();
+	mesh->updateElementBuffer();
 
 	return mesh;
 }

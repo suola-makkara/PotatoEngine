@@ -23,7 +23,7 @@ Object& Object::operator=(const Object& obj)
 	tags = obj.tags;
 	renderMode = obj.renderMode;
 
-	for (auto child : children)
+	for (auto& child : children)
 		children.push_back(child->copy());
 
 	return *this;
@@ -46,22 +46,16 @@ Object& Object::operator=(Object&& obj) noexcept
 	return *this;
 }
 
-Object::~Object()
-{
-	for (auto child : children)
-		delete child;
-}
-
 void Object::render(const Camera* camera) const
 {
-	for (auto child : children)
+	for (auto& child : children)
 		child->render(camera);
 }
 
 std::list<Object::VertexRef> Object::selectVertices(const glm::vec2& start, const glm::vec2& size, const glm::mat4& projView)
 {
 	std::list<VertexRef> verts;
-	for (auto child : children)
+	for (auto& child : children)
 	{
 		auto temp = child->selectVertices(start, size, projView);
 		verts.insert(verts.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
@@ -73,7 +67,7 @@ std::list<Object::VertexRef> Object::selectVertices(const glm::vec2& start, cons
 std::list<Object::ObjectRef> Object::selectObjects(const Ray& ray)
 {
 	std::list<ObjectRef> objs;
-	for (auto child : children)
+	for (auto& child : children)
 	{
 		auto temp = child->selectObjects(ray);
 		objs.insert(objs.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
@@ -84,7 +78,7 @@ std::list<Object::ObjectRef> Object::selectObjects(const Ray& ray)
 
 void Object::setRenderMode(RenderMode mode)
 {
-	for (auto child : children)
+	for (auto& child : children)
 		child->setRenderMode(mode);
 
 	renderMode = mode;
@@ -95,27 +89,26 @@ Object::RenderMode Object::getRenderMode() const
 	return renderMode;
 }
 
-void Object::add(Object* object)
+void Object::add(std::unique_ptr<Object> object)
 {
 	object->parent = this;
 	object->setTransformed();
-	children.push_back(object);
+	children.push_back(std::move(object));
 }
 
 void Object::remove(Object* object)
 {
 	for (auto it = children.begin(); it != children.end(); it++)
-		if (*it == object)
+		if (it->get() == object)
 		{
-			delete *it;
 			children.erase(it);
 			break;
 		}
 }
 
-Object* Object::copy() const
+std::unique_ptr<Object> Object::copy() const
 {
-	return new Object(*this);
+	return std::unique_ptr<Object>(new Object(*this));
 }
 
 const glm::mat4& Object::getTransform() const
@@ -182,7 +175,7 @@ bool Object::hasTag(const std::string& tag) const
 
 void Object::setTransformed()
 {
-	for (auto child : children)
+	for (auto& child : children)
 		child->setTransformed();
 	transformed = true;
 }

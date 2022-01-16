@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <unordered_set>
+#include <memory>
 
 class Camera;
 
@@ -36,13 +37,15 @@ public:
 
 	Object() = default;
 
+protected:
 	Object(const Object&);
 	Object(Object&& obj) noexcept;
 
 	Object& operator=(const Object&);
 	Object& operator=(Object&& obj) noexcept;
 
-	virtual ~Object();
+public:
+	virtual ~Object() = default;
 
 	virtual void render(const Camera* camera) const;
 
@@ -53,10 +56,10 @@ public:
 	virtual void setRenderMode(RenderMode mode);
 	RenderMode getRenderMode() const;
 
-	void add(Object* object);
+	void add(std::unique_ptr<Object> object);
 	void remove(Object* object);
 
-	virtual Object* copy() const;
+	virtual std::unique_ptr<Object> copy() const;
 
 	const glm::mat4& getTransform() const;
 
@@ -86,7 +89,7 @@ protected:
 
 	Object* parent = nullptr;
 
-	std::list<Object*> children;
+	std::list<std::unique_ptr<Object>> children;
 
 	std::unordered_set<std::string> tags;
 };

@@ -12,13 +12,16 @@ class Mesh : public Object
 {
 public:
 	Mesh(Shader* fillShader, Shader* wireframeShader);
+
+protected:
 	Mesh(const Mesh&);
 	Mesh(Mesh&& mesh) noexcept;
 
-	~Mesh();
-
 	Mesh& operator=(const Mesh&);
 	Mesh& operator=(Mesh&& mesh) noexcept;
+
+public:
+	~Mesh();
 
 	void render(const Camera* camera) const override;
 
@@ -26,7 +29,7 @@ public:
 
 	std::list<ObjectRef>selectObjects(const Ray& ray) override;
 
-	Object* copy() const override;
+	std::unique_ptr<Object> copy() const override;
 
 	void setRenderMode(RenderMode mode) override;
 
@@ -36,16 +39,17 @@ public:
 
 	glm::vec3 getCenter() const;
 
-	static Mesh cube(Shader* fillShader, Shader* wireframeShader);
+	static std::unique_ptr<Mesh> cube(Shader* fillShader, Shader* wireframeShader);
 
-	static Mesh cone(Shader* fillShader, Shader* wireframeShader);
+	static std::unique_ptr<Mesh> cone(Shader* fillShader, Shader* wireframeShader);
 
-	static Mesh cylinder(Shader* fillShader, Shader* wireframeShader);
+	static std::unique_ptr<Mesh> cylinder(Shader* fillShader, Shader* wireframeShader);
 
 	static const glm::vec3 BASE_COLOR;
 	static const glm::vec3 SELECTED_COLOR;
 
 	glm::vec3 color = BASE_COLOR;
+
 protected:
 	Shader* fillShader;
 	Shader* wireframeShader;
