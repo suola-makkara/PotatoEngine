@@ -8,6 +8,8 @@
 #include "glad/glad.h"
 #include "glm/glm.hpp"
 
+#include <memory>
+
 class EditorDrawUtils
 {
 public:
@@ -34,6 +36,6 @@ private:
 	static GLuint vertexVao;
 	static GLuint vertexVbo;
 
-	static Object* selector;
+	static std::unique_ptr<Object> selector;
 	static int selectorAxis;
 };

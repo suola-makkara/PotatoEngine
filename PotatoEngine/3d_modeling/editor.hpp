@@ -3,10 +3,13 @@
 #include "event.hpp"
 #include "object.hpp"
 #include "shader.hpp"
+#include "command.hpp"
+#include "editor_context.hpp"
 
 #include "GLFW/glfw3.h"
 
 #include <memory>
+#include <stack>
 
 class Editor
 {
@@ -20,6 +23,10 @@ public:
 	static Editor& get(GLFWwindow* window);
 
 private:
+	EditorContext context;
+
+	void submitCommand(const std::string& commandString);
+
 	std::unique_ptr<Object> scene;
 	std::unique_ptr<Camera> camera;
 

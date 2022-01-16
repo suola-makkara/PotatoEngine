@@ -6,6 +6,7 @@
 #include "ray.hpp"
 #include "ray_cast.hpp"
 #include "ray_utiles.hpp"
+#include "command_parser.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -55,6 +56,18 @@ void Editor::handleEvent(const Event& event)
 	case Event::Type::KEY_RELEASE:
 		switch (event.key)
 		{
+		case GLFW_KEY_0:
+			submitCommand("test");
+			break;
+		case GLFW_KEY_RIGHT:
+			submitCommand("redo");
+			break;
+		case GLFW_KEY_LEFT:
+			submitCommand("revert");
+			break;
+		case GLFW_KEY_1:
+			submitCommand("asdwadw");
+			break;
 		case GLFW_KEY_ESCAPE:
 			setMode(Mode::NONE);
 			if (editMode == EditMode::VERTEX)
@@ -273,6 +286,16 @@ Editor& Editor::get(GLFWwindow* window)
 	static Editor editor(window);
 
 	return editor;
+}
+
+void Editor::submitCommand(const std::string& commandString)
+{
+	auto command = CommandParser::parseCommand(commandString);
+	if (command->execute(context))
+	{
+		context.revertStack.push(std::move(command));
+		context.redoStack = std::stack<std::unique_ptr<Command>>();
+	}
 }
 
 void Editor::setMode(Mode mode)

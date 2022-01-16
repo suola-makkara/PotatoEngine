@@ -118,7 +118,7 @@ void EditorDrawUtils::init()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	selector = new Object();
+	selector = std::make_unique<Object>();
 	auto cyl = Mesh::cylinder(&vertexShader, &vertexShader);
 	cyl->setScale(glm::vec3(0.1f, 1.0f, 0.1f));
 	cyl->color = glm::vec3(0, 1, 0);
@@ -171,8 +171,6 @@ void EditorDrawUtils::deinit()
 
 	glDeleteBuffers(1, &vertexVbo);
 	glDeleteVertexArrays(1, &vertexVao);
-
-	delete selector;
 }
 
 Shader EditorDrawUtils::selectionShader = Shader();
@@ -183,5 +181,5 @@ Shader EditorDrawUtils::vertexShader = Shader();
 GLuint EditorDrawUtils::vertexVao = 0;
 GLuint EditorDrawUtils::vertexVbo = 0;
 
-Object* EditorDrawUtils::selector = nullptr;
+std::unique_ptr<Object> EditorDrawUtils::selector = nullptr;
 int EditorDrawUtils::selectorAxis = -1;
