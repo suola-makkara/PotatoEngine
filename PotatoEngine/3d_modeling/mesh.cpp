@@ -26,6 +26,11 @@ Mesh::Mesh(Shader* fillShader, Shader* wireframeShader)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+Mesh::Mesh(const Mesh& mesh) : Mesh(mesh.fillShader, mesh.wireframeShader)
+{
+	*this = mesh;
+}
+
 Mesh::Mesh(Mesh&& mesh) noexcept
 {
 	Mesh::operator=(std::move(mesh));
@@ -38,19 +43,43 @@ Mesh::~Mesh()
 	glDeleteVertexArrays(1, &vao);
 }
 
+Mesh& Mesh::operator=(const Mesh& mesh)
+{
+	Object::operator=(mesh);
+
+	fillShader = mesh.fillShader;
+	wireframeShader = mesh.wireframeShader;
+
+	vertices = mesh.vertices;
+	faces = mesh.faces;
+	edges = mesh.edges;
+	elements = mesh.elements;
+
+	updateVertexBuffer();
+	updateElementBuffer();
+
+	return *this;
+}
+
 Mesh& Mesh::operator=(Mesh&& mesh) noexcept
 {
 	Object::operator=(std::move(mesh));
 
+	wireframeShader = mesh.wireframeShader;
+	elements = mesh.elements;
+
 	vertices = std::move(mesh.vertices);
 	faces = std::move(mesh.faces);
 	edges = std::move(mesh.edges);
+	fillShader = mesh.fillShader;
+
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &ebo);
+
 	vbo = mesh.vbo;
 	vao = mesh.vao;
 	ebo = mesh.ebo;
-	fillShader = mesh.fillShader;
-	wireframeShader = mesh.wireframeShader;
-	elements = mesh.elements;
 
 	mesh.vbo = 0;
 	mesh.vao = 0;
@@ -150,29 +179,7 @@ std::list<Object::ObjectRef> Mesh::selectObjects(const Ray& ray)
 
 Object* Mesh::copy() const
 {
-	Mesh* mesh = new Mesh(this->fillShader, this->wireframeShader);
-
-	mesh->vertices = vertices;
-	mesh->faces = faces;
-	mesh->edges = edges;
-	mesh->elements = elements;
-
-	mesh->updateVertexBuffer();
-	mesh->updateElementBuffer();
-
-	mesh->transformCache = transformCache;
-	mesh->transformed = transformed;
-	mesh->position = position;
-	mesh->scale = scale;
-	mesh->basis = basis;
-	mesh->parent = parent;
-	mesh->tags = tags;
-	mesh->renderMode = renderMode;
-
-	for (auto child : children)
-		mesh->children.push_back(child->copy());
-
-	return mesh;
+	return new Mesh(*this);
 }
 
 void Mesh::setRenderMode(RenderMode mode)

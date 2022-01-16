@@ -36,10 +36,10 @@ public:
 
 	Object() = default;
 
-	Object(const Object&) = delete;
+	Object(const Object&);
 	Object(Object&& obj) noexcept;
 
-	Object& operator=(const Object&) = delete;
+	Object& operator=(const Object&);
 	Object& operator=(Object&& obj) noexcept;
 
 	virtual ~Object();

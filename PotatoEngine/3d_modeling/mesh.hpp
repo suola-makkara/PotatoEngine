@@ -12,12 +12,12 @@ class Mesh : public Object
 {
 public:
 	Mesh(Shader* fillShader, Shader* wireframeShader);
-	Mesh(const Mesh&) = delete;
+	Mesh(const Mesh&);
 	Mesh(Mesh&& mesh) noexcept;
 
 	~Mesh();
 
-	Mesh& operator=(const Mesh&) = delete;
+	Mesh& operator=(const Mesh&);
 	Mesh& operator=(Mesh&& mesh) noexcept;
 
 	void render(const Camera* camera) const override;
