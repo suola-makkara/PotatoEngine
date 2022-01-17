@@ -13,6 +13,15 @@
 
 class Editor
 {
+private:
+	Editor(GLFWwindow* window);
+	Editor(const Editor&) = delete;
+	Editor(Editor&&) = delete;
+	Editor& operator=(const Editor&) = delete;
+	Editor& operator=(Editor&&) = delete;
+
+	~Editor();
+
 public:
 	void handleEvent(const Event& event);
 
@@ -27,7 +36,7 @@ private:
 
 	void submitCommand(const std::string& commandString);
 
-	std::unique_ptr<Object> scene;
+	//std::unique_ptr<Object> scene;
 	std::unique_ptr<Camera> camera;
 
 	Shader shader;
@@ -36,13 +45,13 @@ private:
 	GLFWwindow* window;
 	glm::ivec2 windowSize;
 
-	enum class EditMode
-	{
-		OBJECT,
-		VERTEX,
-	};
+	//enum class EditMode
+	//{
+	//	OBJECT,
+	//	VERTEX,
+	//};
 
-	EditMode editMode = EditMode::OBJECT;
+	//EditMode editMode = EditMode::OBJECT;
 
 	enum class Mode
 	{
@@ -84,21 +93,13 @@ private:
 
 	void setMode(Mode mode);
 
-	void setEditMode(EditMode mode);
+	//void setEditMode(EditMode mode);
 
 	std::list<Object::VertexRef> selectedVertices{};
 
 	void selectObject(Object* object);
 	void unselectObject();
 	Object* selectedObject = nullptr;
-
-	Editor(GLFWwindow* window);
-	Editor(const Editor&) = delete;
-	Editor(Editor&&) = delete;
-	Editor& operator=(const Editor&) = delete;
-	Editor& operator=(Editor&&) = delete;
-
-	~Editor();
 
 	void updateObjectTransform(const glm::dvec2& mousePos);
 

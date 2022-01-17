@@ -11,7 +11,17 @@ class Command;
 struct EditorContext
 {
 	std::unique_ptr<Object> scene;
-	std::unique_ptr<Camera> camera;
+
+	enum class EditMode
+	{
+		OBJECT,
+		VERTEX,
+	};
+
+	EditMode editMode = EditMode::OBJECT;
+
+	// state varriables
+	Object* selectedObject;
 
 private:
 	std::stack<std::unique_ptr<Command>> revertStack;

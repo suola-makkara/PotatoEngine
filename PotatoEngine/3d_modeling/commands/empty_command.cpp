@@ -1,5 +1,11 @@
 #include "empty_command.hpp"
 
-bool EmptyCommand::execute(EditorContext& context) { return false; }
+#include <iostream>
+
+bool EmptyCommand::execute(EditorContext& context)
+{
+	std::cout << "Unknown command\n";
+	return false;
+}
 
 bool EmptyCommand::revert(EditorContext& context) { return false; }

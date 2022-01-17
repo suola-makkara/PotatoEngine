@@ -43,6 +43,46 @@
 * 
 */
 
+Editor& Editor::get(GLFWwindow* window)
+{
+	static Editor editor(window);
+
+	return editor;
+}
+
+Editor::Editor(GLFWwindow* window) : window(window)
+{
+	shader = Shader("shaders/vbasic.glsl", "shaders/gnormals.glsl", "shaders/fbasic.glsl");
+	wireframeShader = Shader("shaders/vtest.glsl", "shaders/fcolor.glsl");
+
+	context.scene = std::make_unique<Object>();
+	for (int i = 0; i < 10; i++)
+	{
+		auto mesh = Mesh::cylinder(&shader, &wireframeShader);
+		mesh->setPosition(glm::vec3(3 * i, 0, 0));
+		context.scene->add(std::move(mesh));
+		mesh = Mesh::cone(&shader, &wireframeShader);
+		mesh->setPosition(glm::vec3(3 * i, 0, 2));
+		context.scene->add(std::move(mesh));
+		mesh = Mesh::cube(&shader, &wireframeShader);
+		mesh->setScale(glm::vec3(static_cast<float>(i + 1) / 10.0f, 1.0f, 1.0f));
+		mesh->setPosition(glm::vec3(3 * i, 0, 4));
+		mesh->rotate(glm::vec3(1, 0, 0), i / 5.0f);
+		context.scene->add(std::move(mesh));
+	}
+
+	glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
+	camera = std::make_unique<MovingCamera>(glm::vec3(0, 0, 2), static_cast<float>(windowSize.x) / windowSize.y);
+
+	EditorDrawUtils::init();
+}
+
+Editor::~Editor()
+{
+	EditorDrawUtils::deinit();
+}
+
+
 void Editor::handleEvent(const Event& event)
 {
 	if (mode != Mode::COMMAND_ENTER)
@@ -56,7 +96,7 @@ void Editor::handleEvent(const Event& event)
 	case Event::Type::KEY_RELEASE:
 		switch (event.key)
 		{
-		case GLFW_KEY_0:
+/*		case GLFW_KEY_0:
 			submitCommand("test");
 			break;
 		case GLFW_KEY_RIGHT:
@@ -81,17 +121,20 @@ void Editor::handleEvent(const Event& event)
 					dynamic_cast<Mesh*>(vertRef.object)->deleteVertices(vertRef.vertexIndices);
 				selectedVertices.clear();
 			}
-			break;
+			break;*/
 		case GLFW_KEY_ENTER:
 			if (mode == Mode::COMMAND_ENTER)
 			{
-				setMode(Mode::NONE);
-				executeCommand();
+				//setMode(Mode::NONE);
+				//executeCommand();
+				mode = Mode::NONE;
+				std::cout << '\n';
+				submitCommand(command.substr(1));
 			}
-			else if (editMode == EditMode::OBJECT && isMoveMode(mode))
-				startPosition = selectedObject->getPosition();
+			//else if (editMode == EditMode::OBJECT && isMoveMode(mode))
+			//	startPosition = selectedObject->getPosition();
 			break;
-		case GLFW_KEY_O:
+		/*case GLFW_KEY_O:
 			setEditMode(editMode == EditMode::OBJECT ? EditMode::VERTEX : EditMode::OBJECT);
 		case GLFW_KEY_M:
 			if (editMode == EditMode::OBJECT && selectedObject != nullptr)
@@ -183,66 +226,68 @@ void Editor::handleEvent(const Event& event)
 				}
 				updateObjectTransform(getMousePos());
 			}
-			break;
-		}
-	case Event::Type::MOUSE_PRESS:
-		if (event.button == GLFW_MOUSE_BUTTON_RIGHT)
-		{
-			//if (!EditorDrawUtils::pickSelector(camera->castRay(screenToNDC(glm::ivec2(event.pos))))) { }
-
-			setMode(Mode::AREA_SELECT);
-			areaSelect.start = glm::ivec2(event.pos);
-			areaSelect.end = glm::ivec2(event.pos);
+			break;*/
 		}
 		break;
-	case Event::Type::MOUSE_MOVE:
-		if (mode == Mode::AREA_SELECT)
-		{
-			areaSelect.end = glm::ivec2(event.pos);
+	//case Event::Type::MOUSE_PRESS:
+	//	if (event.button == GLFW_MOUSE_BUTTON_RIGHT)
+	//	{
+	//		//if (!EditorDrawUtils::pickSelector(camera->castRay(screenToNDC(glm::ivec2(event.pos))))) { }
 
-			if (editMode == EditMode::VERTEX)
-			{
-				auto nStart = screenToNDC(areaSelect.start);
-				auto nEnd = screenToNDC(areaSelect.end);
-				auto nnStart = glm::min(nStart, nEnd);
-				auto nnEnd = glm::max(nStart, nEnd);
-				selectedVertices = scene->selectVertices(nnStart, nnEnd - nnStart, camera->getProjViewMat());
-			}
-		}
-		else if (editMode == EditMode::OBJECT && (isMoveMode(mode) || isRotationMode(mode) || isScaleMode(mode)))
-			updateObjectTransform(event.pos);
-		break;
-	case Event::Type::MOUSE_RELEASE:
-		if (event.button == GLFW_MOUSE_BUTTON_RIGHT && mode == Mode::AREA_SELECT)
-		{
-			setMode(Mode::NONE);
-			areaSelect.end = glm::ivec2(event.pos);
+	//		setMode(Mode::AREA_SELECT);
+	//		areaSelect.start = glm::ivec2(event.pos);
+	//		areaSelect.end = glm::ivec2(event.pos);
+	//	}
+	//	break;
+	//case Event::Type::MOUSE_MOVE:
+	//	if (mode == Mode::AREA_SELECT)
+	//	{
+	//		areaSelect.end = glm::ivec2(event.pos);
 
-			if (editMode == EditMode::OBJECT)
-			{
-				if (areaSelect.start == areaSelect.end)
-				{
-					auto objs = scene->selectObjects(camera->castRay(screenToNDC(areaSelect.start)));
-					if (!objs.empty())
-					{
-						Object::ObjectRef::sort(objs);
-						if (objs.front().object == selectedObject)
-							unselectObject();
-						else
-							selectObject(objs.front().object);
-					}
-					else
-						unselectObject();
-				}
-				else
-					unselectObject();
-			}
-		}
-		break;
+	//		if (editMode == EditMode::VERTEX)
+	//		{
+	//			auto nStart = screenToNDC(areaSelect.start);
+	//			auto nEnd = screenToNDC(areaSelect.end);
+	//			auto nnStart = glm::min(nStart, nEnd);
+	//			auto nnEnd = glm::max(nStart, nEnd);
+	//			selectedVertices = scene->selectVertices(nnStart, nnEnd - nnStart, camera->getProjViewMat());
+	//		}
+	//	}
+	//	else if (editMode == EditMode::OBJECT && (isMoveMode(mode) || isRotationMode(mode) || isScaleMode(mode)))
+	//		updateObjectTransform(event.pos);
+	//	break;
+	//case Event::Type::MOUSE_RELEASE:
+	//	if (event.button == GLFW_MOUSE_BUTTON_RIGHT && mode == Mode::AREA_SELECT)
+	//	{
+	//		setMode(Mode::NONE);
+	//		areaSelect.end = glm::ivec2(event.pos);
+
+	//		if (editMode == EditMode::OBJECT)
+	//		{
+	//			if (areaSelect.start == areaSelect.end)
+	//			{
+	//				auto objs = scene->selectObjects(camera->castRay(screenToNDC(areaSelect.start)));
+	//				if (!objs.empty())
+	//				{
+	//					Object::ObjectRef::sort(objs);
+	//					if (objs.front().object == selectedObject)
+	//						unselectObject();
+	//					else
+	//						selectObject(objs.front().object);
+	//				}
+	//				else
+	//					unselectObject();
+	//			}
+	//			else
+	//				unselectObject();
+	//		}
+	//	}
+	//	break;
 	case Event::Type::CHAR:
 		if (mode != Mode::COMMAND_ENTER && static_cast<char>(event.character) == ':')
 		{
-			setMode(Mode::COMMAND_ENTER);
+			//setMode(Mode::COMMAND_ENTER);
+			mode = Mode::COMMAND_ENTER;
 			command = "";
 		}
 		if (mode == Mode::COMMAND_ENTER)
@@ -261,120 +306,86 @@ void Editor::update(float dt)
 
 void Editor::render()
 {
-	scene->render(camera.get());
+	context.scene->render(camera.get());
 
-	for (const auto& vertRef : selectedVertices)
-		EditorDrawUtils::drawVertices(dynamic_cast<Mesh*>(vertRef.object)->getVertices(vertRef.vertexIndices), camera->getProjViewMat());
+	//for (const auto& vertRef : selectedVertices)
+	//	EditorDrawUtils::drawVertices(dynamic_cast<Mesh*>(vertRef.object)->getVertices(vertRef.vertexIndices), camera->getProjViewMat());
 	
-	switch (mode)
-	{
-	case Editor::Mode::AREA_SELECT:
-	{
-		auto nStart = screenToNDC(areaSelect.start);
-		auto nEnd = screenToNDC(areaSelect.end);
-		auto nnStart = glm::min(nStart, nEnd);
-		auto nnEnd = glm::max(nStart, nEnd);
-		if (nStart != nEnd)
-		EditorDrawUtils::drawSelection(nnStart, nnEnd - nnStart);
-		break;
-	}
-	}
-}
-
-Editor& Editor::get(GLFWwindow* window)
-{
-	static Editor editor(window);
-
-	return editor;
+	//switch (mode)
+	//{
+	//case Editor::Mode::AREA_SELECT:
+	//{
+	//	auto nStart = screenToNDC(areaSelect.start);
+	//	auto nEnd = screenToNDC(areaSelect.end);
+	//	auto nnStart = glm::min(nStart, nEnd);
+	//	auto nnEnd = glm::max(nStart, nEnd);
+	//	if (nStart != nEnd)
+	//	EditorDrawUtils::drawSelection(nnStart, nnEnd - nnStart);
+	//	break;
+	//}
+	//}
 }
 
 void Editor::submitCommand(const std::string& commandString)
 {
-	auto command = CommandParser::parseCommand(commandString);
-	if (command->execute(context))
+	auto commands = CommandParser::parseCommand(commandString);
+	for (auto& command : commands)
 	{
-		context.revertStack.push(std::move(command));
-		context.redoStack = std::stack<std::unique_ptr<Command>>();
+		if (command->execute(context))
+		{
+			context.revertStack.push(std::move(command));
+			context.redoStack = std::stack<std::unique_ptr<Command>>();
+		}
 	}
 }
 
-void Editor::setMode(Mode mode)
-{
-	if (this->mode == Mode::COMMAND_ENTER)
-		std::cout << '\n';
+//void Editor::setMode(Mode mode)
+//{
+//	if (this->mode == Mode::COMMAND_ENTER)
+//		std::cout << '\n';
+//
+//	if (isMoveMode(this->mode) && mode != Mode::AREA_SELECT)
+//		selectedObject->setPosition(startPosition);
+//	else if (isRotationMode(this->mode) && mode != Mode::AREA_SELECT)
+//		selectedObject->setBasis(startBasis);
+//	else if (isScaleMode(this->mode) && mode != Mode::AREA_SELECT)
+//		selectedObject->setScale(startScale);
+//
+//	this->mode = mode;
+//}
 
-	if (isMoveMode(this->mode) && mode != Mode::AREA_SELECT)
-		selectedObject->setPosition(startPosition);
-	else if (isRotationMode(this->mode) && mode != Mode::AREA_SELECT)
-		selectedObject->setBasis(startBasis);
-	else if (isScaleMode(this->mode) && mode != Mode::AREA_SELECT)
-		selectedObject->setScale(startScale);
+//void Editor::setEditMode(EditMode mode)
+//{
+//	setMode(Mode::NONE);
+//
+//	if (editMode == EditMode::OBJECT)
+//		unselectObject();
+//	else if (editMode == EditMode::VERTEX)
+//		selectedVertices.clear();
+//
+//	editMode = mode;
+//}
 
-	this->mode = mode;
-}
+//void Editor::selectObject(Object* object)
+//{
+//	if (selectedObject != nullptr)
+//		dynamic_cast<Mesh*>(selectedObject)->color = Mesh::BASE_COLOR;
+//
+//	selectedObject = object;
+//	if (selectedObject != nullptr)
+//		dynamic_cast<Mesh*>(selectedObject)->color = Mesh::SELECTED_COLOR;
+//}
+//
+//void Editor::unselectObject()
+//{
+//	selectObject(nullptr);
+//}
 
-void Editor::setEditMode(EditMode mode)
-{
-	setMode(Mode::NONE);
 
-	if (editMode == EditMode::OBJECT)
-		unselectObject();
-	else if (editMode == EditMode::VERTEX)
-		selectedVertices.clear();
 
-	editMode = mode;
-}
 
-void Editor::selectObject(Object* object)
-{
-	if (selectedObject != nullptr)
-		dynamic_cast<Mesh*>(selectedObject)->color = Mesh::BASE_COLOR;
 
-	selectedObject = object;
-	if (selectedObject != nullptr)
-		dynamic_cast<Mesh*>(selectedObject)->color = Mesh::SELECTED_COLOR;
-}
-
-void Editor::unselectObject()
-{
-	selectObject(nullptr);
-}
-
-Editor::Editor(GLFWwindow* window) : window(window)
-{
-	shader = Shader("shaders/vbasic.glsl", "shaders/gnormals.glsl", "shaders/fbasic.glsl");
-	wireframeShader = Shader("shaders/vtest.glsl", "shaders/fcolor.glsl");
-
-	scene = std::make_unique<Object>();
-	for (int i = 0; i < 10; i++)
-	{
-		auto mesh = Mesh::cylinder(&shader, &wireframeShader);
-		mesh->setPosition(glm::vec3(3 * i, 0, 0));
-		scene->add(std::move(mesh));
-		mesh = Mesh::cone(&shader, &wireframeShader);
-		mesh->setPosition(glm::vec3(3 * i, 0, 2));
-		scene->add(std::move(mesh));
-		mesh = Mesh::cube(&shader, &wireframeShader);
-		mesh->setScale(glm::vec3(static_cast<float>(i + 1) / 10.0f, 1.0f, 1.0f));
-		mesh->setPosition(glm::vec3(3 * i, 0, 4));
-		mesh->rotate(glm::vec3(1, 0, 0), i / 5.0f);
-		scene->add(std::move(mesh));
-	}
-
-	//scene->rotate(glm::vec3(0, 1, 0), 1.5f);
-
-	glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
-	camera = std::make_unique<MovingCamera>(glm::vec3(0, 0, 2), static_cast<float>(windowSize.x) / windowSize.y);
-
-	EditorDrawUtils::init();
-}
-
-Editor::~Editor()
-{
-	EditorDrawUtils::deinit();
-}
-
-void Editor::updateObjectTransform(const glm::dvec2& mousePos)
+/*void Editor::updateObjectTransform(const glm::dvec2& mousePos)
 {
 	auto ray = camera->castRay(screenToNDC(glm::ivec2(mousePos)));
 	
@@ -493,9 +504,9 @@ void Editor::updateObjectTransform(const glm::dvec2& mousePos)
 
 		selectedObject->setPosition(newPosition);
 	}
-}
+}*/
 
-void Editor::executeCommand()
+/*void Editor::executeCommand()
 {
 	std::stringstream sss;
 	sss << command;
@@ -579,16 +590,16 @@ void Editor::executeCommand()
 			}
 		}
 	}
-}
+}*/
 
-glm::dvec2 Editor::getMousePos()
-{
-	double x, y;
-	glfwGetCursorPos(window, &x, &y);
-	return glm::dvec2(x, y);
-}
+//glm::dvec2 Editor::getMousePos()
+//{
+//	double x, y;
+//	glfwGetCursorPos(window, &x, &y);
+//	return glm::dvec2(x, y);
+//}
 
-bool Editor::isMoveMode(Mode mode) const
+/*bool Editor::isMoveMode(Mode mode) const
 {
 	return mode == Mode::MOVE_X || mode == Mode::MOVE_Y || mode == Mode::MOVE_Z ||
 		mode == Mode::MOVE_XY || mode == Mode::MOVE_YZ || mode == Mode::MOVE_ZX;
@@ -613,10 +624,10 @@ bool Editor::leftCtrlDown() const
 bool Editor::leftShiftDown() const
 {
 	return glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
-}
+}*/
 
-glm::vec2 Editor::screenToNDC(const glm::ivec2& v) const
-{
-	glm::vec2 nv = glm::vec2(v) / glm::vec2(windowSize);
-	return glm::vec2((nv.x - 0.5f) * 2.0f, (0.5f - nv.y) * 2.0f);
-}
+//glm::vec2 Editor::screenToNDC(const glm::ivec2& v) const
+//{
+//	glm::vec2 nv = glm::vec2(v) / glm::vec2(windowSize);
+//	return glm::vec2((nv.x - 0.5f) * 2.0f, (0.5f - nv.y) * 2.0f);
+//}
