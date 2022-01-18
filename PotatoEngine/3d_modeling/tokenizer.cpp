@@ -58,7 +58,8 @@ std::vector<std::string> Tokenizer::splitIgnore(const std::string& input, const 
 
 std::vector<std::string> Tokenizer::splitToken(const std::string& input, const std::set<std::string>& splitTokens, const int maxSplitTokenLength)
 {
-	auto findFirstLongest = [&](const std::string& sub) -> std::pair<int, std::string>
+	static auto findFirstLongest = [&](const std::string& sub, const std::set<std::string>& splitTokens,
+		const int maxSplitTokenLength) -> std::pair<int, std::string>
 	{
 		for (int startIndex = 0; startIndex < sub.size(); startIndex++)
 		{
@@ -78,7 +79,7 @@ std::vector<std::string> Tokenizer::splitToken(const std::string& input, const s
 	auto currentSubstr = input;
 	while (!currentSubstr.empty())
 	{
-		auto [index, str] = findFirstLongest(currentSubstr);
+		auto [index, str] = findFirstLongest(currentSubstr, splitTokens, maxSplitTokenLength);
 
 		if (index == -1)
 		{

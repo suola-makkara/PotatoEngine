@@ -65,22 +65,33 @@ TEST(InputConstraintParseTest, CommandTest)
 
 TEST(InputConstraintParseTest, RequirmentTest)
 {
-	const std::string REQUIRMENT_INPUT("(O)[test requirment]{test command}");
+	const std::string REQUIRMENT_INPUT("(O)[test requirment]{}");
 
 	auto constraint = InputConstraintParser::parseInputConstraint(REQUIRMENT_INPUT);
 
 	ASSERT_EQ(constraint.inputSeq.size(), 1);
 	EXPECT_EQ(constraint.inputSeq[0], Event(Event::Type::KEY_RELEASE, GLFW_KEY_O));
-	EXPECT_EQ(constraint.command, "if(test_requirment){}");
+	EXPECT_EQ(constraint.command, "");
+}
+
+TEST(InputConstraintParseTest, NoRequirmentTest)
+{
+	const std::string REQUIRMENT_INPUT("(ALT+CTRL+K){test command}");
+
+	auto constraint = InputConstraintParser::parseInputConstraint(REQUIRMENT_INPUT);
+
+	ASSERT_EQ(constraint.inputSeq.size(), 1);
+	EXPECT_EQ(constraint.inputSeq[0], Event(Event::Type::KEY_RELEASE, GLFW_KEY_K, GLFW_MOD_CONTROL | GLFW_MOD_ALT));
+	EXPECT_EQ(constraint.command, "test command");
 }
 
 TEST(InputConstraintParseTest, FullTest)
 {
-	const std::string REQUIRMENT_INPUT("(CTRL+J)[test requirment]{test command}");
+	const std::string REQUIRMENT_INPUT("(CTRL+J)[test [] requirment[www[]asd]]{test {}{}[]{{{{}}}}command}");
 
 	auto constraint = InputConstraintParser::parseInputConstraint(REQUIRMENT_INPUT);
 
 	ASSERT_EQ(constraint.inputSeq.size(), 1);
 	EXPECT_EQ(constraint.inputSeq[0], Event(Event::Type::KEY_RELEASE, GLFW_KEY_J, GLFW_MOD_CONTROL));
-	EXPECT_EQ(constraint.command, "if(test_requirment){test command}");
+	EXPECT_EQ(constraint.command, "if(test [] requirment[www[]asd]){test {}{}[]{{{{}}}}command}");
 }

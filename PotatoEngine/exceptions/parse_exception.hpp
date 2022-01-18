@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <string>
 
-class ParseException : std::runtime_error
+class ParseException : public std::runtime_error
 {
 public:
 	ParseException(const std::string& err)
