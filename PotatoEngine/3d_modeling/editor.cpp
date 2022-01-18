@@ -43,14 +43,7 @@
 * 
 */
 
-Editor& Editor::get(GLFWwindow* window)
-{
-	static Editor editor(window);
-
-	return editor;
-}
-
-Editor::Editor(GLFWwindow* window) : window(window)
+Editor::Editor(GLFWwindow* window) : window(window), drawUtils(std::make_unique<EditorDrawUtils>())
 {
 	shader = Shader("shaders/vbasic.glsl", "shaders/gnormals.glsl", "shaders/fbasic.glsl");
 	wireframeShader = Shader("shaders/vtest.glsl", "shaders/fcolor.glsl");
@@ -73,15 +66,7 @@ Editor::Editor(GLFWwindow* window) : window(window)
 
 	glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
 	camera = std::make_unique<MovingCamera>(glm::vec3(0, 0, 2), static_cast<float>(windowSize.x) / windowSize.y);
-
-	EditorDrawUtils::init();
 }
-
-Editor::~Editor()
-{
-	EditorDrawUtils::deinit();
-}
-
 
 void Editor::handleEvent(const Event& event)
 {

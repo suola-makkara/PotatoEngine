@@ -13,29 +13,26 @@
 class EditorDrawUtils
 {
 public:
-	static void drawSelection(const glm::vec2& start, const glm::vec2& size);
+	EditorDrawUtils();
+	EditorDrawUtils(const EditorDrawUtils&) = delete;
+	EditorDrawUtils& operator=(const EditorDrawUtils&) = delete;
 
-	static void drawVertices(const std::vector<glm::vec3>& vertices, const glm::mat4& projView);
+	~EditorDrawUtils();
 
-	static void drawSelector(const glm::vec3& pos, const Camera* camera);
+	void drawSelection(const glm::vec2& start, const glm::vec2& size);
 
-	static bool pickSelector(const Ray& ray);
+	void drawVertices(const std::vector<glm::vec3>& vertices, const glm::mat4& projView);
 
-	static void updateSelector(const Ray& ray);
-
-	static void init();
-
-	static void deinit();
+	void drawSelector(const glm::vec3& pos, const Camera* camera);
 
 private:
-	static Shader selectionShader;
-	static GLuint selectionVao;
-	static GLuint selectionVbo;
+	Shader selectionShader;
+	GLuint selectionVao;
+	GLuint selectionVbo;
 
-	static Shader vertexShader;
-	static GLuint vertexVao;
-	static GLuint vertexVbo;
+	Shader vertexShader;
+	GLuint vertexVao;
+	GLuint vertexVbo;
 
-	static std::unique_ptr<Object> selector;
-	static int selectorAxis;
+	std::unique_ptr<Object> selector;
 };

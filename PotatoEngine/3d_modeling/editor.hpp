@@ -5,6 +5,7 @@
 #include "shader.hpp"
 #include "command.hpp"
 #include "editor_context.hpp"
+#include "editor_draw_utils.hpp"
 
 #include "GLFW/glfw3.h"
 
@@ -14,24 +15,20 @@
 class Editor
 {
 private:
+	friend class App;
+
 	Editor(GLFWwindow* window);
 	Editor(const Editor&) = delete;
-	Editor(Editor&&) = delete;
 	Editor& operator=(const Editor&) = delete;
-	Editor& operator=(Editor&&) = delete;
 
-	~Editor();
+	//~Editor() = default;
 
-public:
 	void handleEvent(const Event& event);
 
 	void update(float dt);
 
 	void render();
 
-	static Editor& get(GLFWwindow* window);
-
-private:
 	EditorContext context;
 
 	void submitCommand(const std::string& commandString);
@@ -115,4 +112,6 @@ private:
 
 	bool leftCtrlDown() const;
 	bool leftShiftDown() const;
+
+	std::unique_ptr<EditorDrawUtils> drawUtils;
 };

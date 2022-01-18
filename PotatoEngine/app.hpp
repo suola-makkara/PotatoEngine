@@ -7,28 +7,34 @@
 #include "shader.hpp"
 #include "event_registry.hpp"
 #include "moving_camera.hpp"
-#include "tesselation_test.hpp"
+#include "editor.hpp"
 
 #include "glad\glad.h"
 #include "GLFW\glfw3.h"
 
+#include <memory>
+
 class App
 {
-public:
+private:
+	friend int main();
+
 	App();
+	App(const App&) = delete;
+	App& operator=(const App&) = delete;
 
 	~App();
 
 	int run();
-
-private:
-	GLFWwindow* window;
 
 	void initGLFW(int windowWidth, int windowHeight);
 
 	void initGL();
 
 	void init(int windowWidth, int windowHeight);
+
+	GLFWwindow* window;
+	std::unique_ptr<Editor> editor;
 
 #ifdef DEBUG
 	static void GLAPIENTRY glErrorCallback(GLenum source, GLenum type, GLuint id,

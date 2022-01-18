@@ -10,6 +10,9 @@ App::App()
 	initGLFW(windowWidth, windowHeight);
 	initGL();
 	init(windowWidth, windowHeight);
+
+	// can't use make_unique since constructor is private
+	editor = std::unique_ptr<Editor>(new Editor(window));
 }
 
 App::~App()
@@ -58,10 +61,10 @@ int App::run()
 				break;
 			}
 
-			Editor::get(window).handleEvent(e);
+			editor->handleEvent(e);
 		}
 
-		Editor::get(window).update(static_cast<float>(dt));
+		editor->update(static_cast<float>(dt));
 
 #ifdef VIEW_VIDEO_MEMORY
 		static int prev = 0;
@@ -78,7 +81,7 @@ int App::run()
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		Editor::get(window).render();
+		editor->render();
 
 		glfwSwapBuffers(window);
 	}
