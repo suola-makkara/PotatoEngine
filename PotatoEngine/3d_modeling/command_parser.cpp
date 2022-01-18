@@ -9,6 +9,71 @@
 #include <iostream>
 #include <list>
 
+/*
+* edit context
+* - access thrugh config file
+* - no gurantees on state after undo / redo which affect only on scene context
+* 
+* scene context
+* - full desctiption of the scene objects with object hierarchy
+* - only mutable by commands with undo / redo
+* - "global" immutable access
+* 
+* scene command
+* - operate on the scene with out direct access to edit context
+* 
+* 
+*				 user input
+*					 |
+*			|->	input config	command input
+*			|		 |				  |
+*			|	     --------|---------
+*			|				 |
+*			|		general script context
+*			|			|				| <- mutable access
+*			modify edit context		 execute scene edit command
+* 
+* user input
+*	- key / mouse input
+*	-> input config
+*		- defines script that executes constrained on input and edit context
+* 
+* input config syntax
+* (KEYS)[REQUIRMENTS]{EXPRESSION}
+* 
+* examples
+* 
+* keys
+* - single key
+*	(A)
+* - multiple keys in sequence
+*	(A B C)
+* - key modifiers
+*	(L_CTRL+A)
+* - mouse move
+*	(MOUSE_MOVE)
+* - mouse button
+*	(MOUSE_LEFT)
+* 
+* if multiple key sequences could match on input longes terminates and starts new
+* ex: (A B C), (C D) with input A B C D selects (A B C) and leaves D in buffer (C, D) wont be matched
+* 
+* requirments (immutable access to editor state and other possible state value such as window size)
+* -	check edit mode (automatic ==)
+*	[EDIT_CONTEXT.EDIT_MODE OBJECT]
+* - check if an object is selected (automatic != NULL)
+*	[EDIT_CONTEXT.SELECTED_OBJECT]
+* - compare window size (comparisons >, <, >=, <=, (implicit ==))
+*	[WINDOW.SIZE_X > 100]
+* 
+* expression (in general any command executable on command line :expression)
+* { EDIT_CONTEXT.SET_EDIT_MODE(EDIT_MODE_VERTEX); }
+* 
+* 
+* scripting
+*	-custom / python ?
+*/
+
 std::list<std::unique_ptr<Command>> CommandParser::parseCommand(const std::string& commandString)
 {
 	static const std::set<std::string> validTokens{ "+", "-", "*", "/", "(", ")", "{", "}", "[", "]", ">", "<", "=", ">=", "<=", "=="};
