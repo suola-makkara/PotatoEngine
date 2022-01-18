@@ -7,6 +7,6 @@ set (LIB
 	PotatoEngineLib
 )
 
-add_executable(ParseTest "input_constraint_parse_test.cpp")
-target_link_libraries(ParseTest ${LIB})
-gtest_add_tests(TARGET ParseTest TEST_SUFFIX "" TEST_LIST "")
+add_executable(PotatoEngineTest "test_main.cpp")
+target_link_libraries(PotatoEngineTest ${LIB})
+gtest_add_tests(TARGET PotatoEngineTest TEST_SUFFIX "" TEST_LIST "")

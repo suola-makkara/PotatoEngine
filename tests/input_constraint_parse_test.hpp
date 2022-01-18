@@ -84,9 +84,3 @@ TEST(InputConstraintParseTest, FullTest)
 	EXPECT_EQ(constraint.inputSeq[0], Event(Event::Type::KEY_RELEASE, GLFW_KEY_J, GLFW_MOD_CONTROL));
 	EXPECT_EQ(constraint.command, "if(test_requirment){test command}");
 }
-
-int main(int argc, char** argv)
-{
-	::testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
-}

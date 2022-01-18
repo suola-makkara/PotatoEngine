@@ -1,6 +1,8 @@
 ﻿cmake_minimum_required (VERSION 3.15)
 project ("PotatoEngine")
 
+set(CMAKE_CXX_STANDARD 17)
+
 set(GLAD_ALL_EXTENSIONS ON)
 
 add_subdirectory("ext/glad")
