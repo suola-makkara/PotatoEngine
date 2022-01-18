@@ -7,3 +7,6 @@
 [submodule "ext/glad"]
 	path = ext/glad
 	url = https://github.com/Dav1dde/glad.git
+[submodule "ext/gtest"]
+	path = ext/gtest
+	url = https://github.com/google/googletest.git
