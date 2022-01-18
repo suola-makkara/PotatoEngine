@@ -8,6 +8,7 @@ set (LIB
 
 file (GLOB_RECURSE CPP CONFIGURE_DEPENDS "*.cpp")
 file (GLOB_RECURSE HPP CONFIGURE_DEPENDS "*.hpp")
+list (FILTER CPP EXCLUDE REGEX ".*main.cpp$")
 
 file (GLOB_RECURSE ALL_FILES LIST_DIRECTORIES TRUE CONFIGURE_DEPENDS "*")
 set(ALL_DIRS "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -17,6 +18,9 @@ foreach(FILE ${ALL_FILES})
 	endif()
 endforeach()
 
-add_executable (${PROJECT_NAME} ${CPP} ${HPP})
-target_include_directories(${PROJECT_NAME} PUBLIC ${ALL_DIRS})
-target_link_libraries(${PROJECT_NAME} ${LIB})
+add_library (PotatoEngineLib ${CPP} ${HPP})
+target_include_directories(PotatoEngineLib PUBLIC ${ALL_DIRS})
+target_link_libraries(PotatoEngineLib ${LIB})
+
+add_executable (${PROJECT_NAME} "main.cpp")
+target_link_libraries(${PROJECT_NAME} PotatoEngineLib)

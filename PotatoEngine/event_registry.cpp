@@ -42,34 +42,27 @@ void EventRegistry::errorCallback(int error, const char* description)
 
 void EventRegistry::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	Event e{};
+	Event::Type type = Event::Type::UNKNOWN;
 	switch (action)
 	{
 	case GLFW_PRESS:
-		e.type = Event::Type::KEY_PRESS;
+		type = Event::Type::KEY_PRESS;
 		break;
 	case GLFW_REPEAT:
-		e.type = Event::Type::KEY_REPEAT;
+		type = Event::Type::KEY_REPEAT;
 		break;
 	case GLFW_RELEASE:
-		e.type = Event::Type::KEY_RELEASE;
+		type = Event::Type::KEY_RELEASE;
 		break;
-	default:
-		e.type = Event::Type::UNKNOWN;
 	}
 
-	e.key = key;
-
-	events.push(e);
+	if (type != Event::Type::UNKNOWN)
+		events.push(Event(type, key, mods));
 }
 
 void EventRegistry::cursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
 {
-	Event e{};
-	e.type = Event::Type::MOUSE_MOVE;
-	e.pos = glm::dvec2(xpos, ypos);
-
-	events.push(e);
+	events.push(Event(Event::Type::MOUSE_MOVE, glm::dvec2(xpos, ypos)));
 }
 
 void EventRegistry::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -77,51 +70,34 @@ void EventRegistry::mouseButtonCallback(GLFWwindow* window, int button, int acti
 	double x, y;
 	glfwGetCursorPos(window, &x, &y);
 
-	Event e{};
+	Event::Type type = Event::Type::UNKNOWN;
 	switch (action)
 	{
 	case GLFW_PRESS:
-		e.type = Event::Type::MOUSE_PRESS;
+		type = Event::Type::MOUSE_PRESS;
 		break;
 	case GLFW_RELEASE:
-		e.type = Event::Type::MOUSE_RELEASE;
-		break;
-	default:
-		e.type = Event::Type::UNKNOWN;
+		type = Event::Type::MOUSE_RELEASE;
 		break;
 	}
 
-	e.pos = glm::dvec2(x, y);
-	e.button = button;
-
-	events.push(e);
+	if (type != Event::Type::UNKNOWN)
+		events.push(Event(type, button, glm::dvec2(x, y), mods));
 }
 
 void EventRegistry::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	Event e{};
-	e.type = Event::Type::SCROLL;
-	e.scroll = yoffset;
-
-	events.push(e);
+	events.push(Event(Event::Type::SCROLL, yoffset));
 }
 
 void EventRegistry::framebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
-	Event e{};
-	e.type = Event::Type::FRAME_BUFFER_RESIZE;
-	e.size = glm::ivec2(width, height);
-
-	events.push(e);
+	events.push(Event(Event::Type::FRAME_BUFFER_RESIZE, glm::ivec2(width, height)));
 }
 
 void EventRegistry::characterCallback(GLFWwindow* window, unsigned character)
 {
-	Event e{};
-	e.type = Event::Type::CHAR;
-	e.character = character;
-	
-	events.push(e);
+	events.push(Event(Event::Type::CHAR, character));
 }
 
 std::queue<Event> EventRegistry::events = std::queue<Event>();
