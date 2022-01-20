@@ -13,9 +13,14 @@ set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
 set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 add_subdirectory("ext/gtest")
 
-add_custom_target(test_target ALL
+add_custom_target(shader_symlink_target ALL
 	COMMAND ${CMAKE_COMMAND} -E create_symlink "${CMAKE_CURRENT_SOURCE_DIR}/shaders" "${PROJECT_BINARY_DIR}/${PROJECT_NAME}/shaders"
-	COMMENT "Creating symlink"
+	COMMENT "Creating shader symlink"
+)
+
+add_custom_target(config_symlink_target ALL
+	COMMAND ${CMAKE_COMMAND} -E create_symlink "${CMAKE_CURRENT_SOURCE_DIR}/config" "${PROJECT_BINARY_DIR}/${PROJECT_NAME}/config"
+	COMMENT "Creating config symlink"
 )
 
 add_subdirectory (${PROJECT_NAME})

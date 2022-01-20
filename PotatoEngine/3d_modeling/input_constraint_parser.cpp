@@ -9,7 +9,7 @@
 #include <string>
 #include <cmath>
 
-InputConstraintParser::InputConstraint InputConstraintParser::parseInputConstraint(const std::string& inputConstraint)
+InputConstraint InputConstraintParser::parseInputConstraint(const std::string& inputConstraint)
 {
 	auto [keyPart, requirmentPart, commandPart] = separateConstraint(inputConstraint);
 

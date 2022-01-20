@@ -6,22 +6,20 @@
 #include "command.hpp"
 #include "editor_context.hpp"
 #include "editor_draw_utils.hpp"
+#include "config.hpp"
+#include "noncopyable.hpp"
 
 #include "GLFW/glfw3.h"
 
 #include <memory>
 #include <stack>
 
-class Editor
+class Editor : Noncopyable
 {
 private:
 	friend class App;
 
 	Editor(GLFWwindow* window);
-	Editor(const Editor&) = delete;
-	Editor& operator=(const Editor&) = delete;
-
-	//~Editor() = default;
 
 	void handleEvent(const Event& event);
 
@@ -33,7 +31,6 @@ private:
 
 	void submitCommand(const std::string& commandString);
 
-	//std::unique_ptr<Object> scene;
 	std::unique_ptr<Camera> camera;
 
 	Shader shader;
@@ -41,6 +38,8 @@ private:
 
 	GLFWwindow* window;
 	glm::ivec2 windowSize;
+
+	Config config;
 
 	//enum class EditMode
 	//{

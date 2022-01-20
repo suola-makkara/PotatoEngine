@@ -6,15 +6,15 @@
 #include <vector>
 #include <array>
 
+struct InputConstraint
+{
+	std::vector<Event> inputSeq;
+	std::string command;
+};
+
 class InputConstraintParser
 {
 public:
-	struct InputConstraint
-	{
-		std::vector<Event> inputSeq;
-		std::string command;
-	};
-
 	static InputConstraint parseInputConstraint(const std::string& inputConstraint);
 
 private:
