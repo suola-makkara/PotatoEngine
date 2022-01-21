@@ -1,5 +1,6 @@
 #include "input_constraint_parse_test.hpp"
 #include "tokenize_test.hpp"
+#include "script_test.hpp"
 
 #include "gtest/gtest.h"
 
