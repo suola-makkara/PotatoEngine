@@ -8,6 +8,7 @@
 #include "editor_draw_utils.hpp"
 #include "config.hpp"
 #include "noncopyable.hpp"
+#include "script_runner.hpp"
 
 #include "GLFW/glfw3.h"
 
@@ -40,6 +41,8 @@ private:
 	glm::ivec2 windowSize;
 
 	Config config;
+
+	ScriptRunner sr;
 
 	//enum class EditMode
 	//{

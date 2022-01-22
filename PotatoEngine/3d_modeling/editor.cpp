@@ -7,6 +7,7 @@
 #include "ray_cast.hpp"
 #include "ray_utiles.hpp"
 #include "command_parser.hpp"
+#include "parse_exception.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -43,7 +44,7 @@
 * 
 */
 
-Editor::Editor(GLFWwindow* window) : window(window), drawUtils(std::make_unique<EditorDrawUtils>())
+Editor::Editor(GLFWwindow* window) : window(window), drawUtils(std::make_unique<EditorDrawUtils>()), sr(&std::cout)
 {
 	shader = Shader("shaders/vbasic.glsl", "shaders/gnormals.glsl", "shaders/fbasic.glsl");
 	wireframeShader = Shader("shaders/vtest.glsl", "shaders/fcolor.glsl");
@@ -114,7 +115,15 @@ void Editor::handleEvent(const Event& event)
 				//executeCommand();
 				mode = Mode::NONE;
 				std::cout << '\n';
-				submitCommand(command.substr(1));
+				//submitCommand(command.substr(1));
+				try
+				{
+					sr.run(command.substr(1));
+				}
+				catch (const ParseException& ex)
+				{
+					std::cout << ex.what() << '\n';
+				}
 			}
 			//else if (editMode == EditMode::OBJECT && isMoveMode(mode))
 			//	startPosition = selectedObject->getPosition();

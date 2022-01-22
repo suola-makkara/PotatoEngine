@@ -51,3 +51,24 @@ TEST(ScriptTest, ParenthesesTest)
 {
 	EXPECT_EQ(runScript(R"(print((1 + 2) * 5))"), "15");
 }
+
+TEST(ScriptTest, UnaryOperatorTest)
+{
+	EXPECT_EQ(runScript(R"(print(-5))"), "-5");
+	EXPECT_EQ(runScript(R"(print(+5))"), "5");
+}
+
+TEST(ScriptTest, VarTest1)
+{
+	EXPECT_EQ(runScript(R"(x = 10 print(x))"), "10");
+}
+
+TEST(ScriptTest, VarTest2)
+{
+	EXPECT_EQ(runScript(R"(x = 10 y = 123 print(x + y))"), "133");
+}
+
+TEST(ScriptTest, VarTest3)
+{
+	EXPECT_EQ(runScript(R"(x = 10 y = 123 x = x + 5 print(x + y))"), "138");
+}
