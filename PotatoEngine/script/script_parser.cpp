@@ -5,6 +5,7 @@
 #include "integer_type.hpp"
 
 #include <memory>
+#include <map>
 
 std::unique_ptr<ScriptParser::Expression> ScriptParser::parseSource(const std::string& source)
 {
@@ -18,15 +19,15 @@ std::unique_ptr<ScriptParser::Expression> ScriptParser::parseSource(const std::s
 		for (char ch = '0'; ch <= '9'; ch++)
 			s.insert(ch);
 
-		s.insert({ '+', '-', '*', '/', ' ', '(', ')', '"', '\n', '\t', '\r'});
+		s.insert({ '+', '-', '*', '/', ' ', '(', ')', '"', '=', '\n', '\t', '\r'});
 
 		return s;
 	}();
 
 	static const std::set<char> splitCharSet = { ' ', '\n', '\t', '\r' };
-	static const std::set<std::string> splitTokenSet = { "+", "-", "*", "/", "(", ")", "\"" };
+	static const std::set<std::string> splitTokenSet = { "+", "-", "*", "/", "(", ")", "\"", "=", "+=", "-=", "*=", "/=" };
 
-	auto tokens = Tokenizer::tokenize(source, validCharSet, splitCharSet, splitTokenSet, 1);
+	auto tokens = Tokenizer::tokenize(source, validCharSet, splitCharSet, splitTokenSet, 2);
 
 	return parseExpression(tokens);
 }
@@ -87,6 +88,18 @@ std::unique_ptr<ScriptParser::Expression> ScriptParser::parseExpression(const st
 		return true;
 	};
 
+	static const std::map<std::string, Operator::OperatorType> operators = {
+		{ "+", Operator::OperatorType::ADDITION },
+		{ "-", Operator::OperatorType::SUBTRACTION },
+		{ "*", Operator::OperatorType::MULTIPLICATION },
+		{ "/", Operator::OperatorType::DIVISION },
+		{ "=", Operator::OperatorType::ASSIGNMENT },
+		{ "+=", Operator::OperatorType::ADD_ASSIGN },
+		{ "-=", Operator::OperatorType::SUB_ASSIGN },
+		{ "*=", Operator::OperatorType::MULT_ASSIGN },
+		{ "/=", Operator::OperatorType::DIV_ASSIGN }
+	};
+
 	std::unique_ptr<Expression> expression = std::make_unique<Expression>();
 
 	for (int tokenIndex = 0; tokenIndex < tokens.size(); tokenIndex++)
@@ -122,18 +135,9 @@ std::unique_ptr<ScriptParser::Expression> ScriptParser::parseExpression(const st
 
 			tokenIndex = nextQuoteIndex;
 		}
-		else if (nextToken == "*" || nextToken == "/" || nextToken == "+" || nextToken == "-")
+		else if (operators.count(nextToken) != 0)
 		{
-			Operator::OperatorType operatorType;
-			if (nextToken == "*")
-				operatorType = Operator::OperatorType::MULTIPLICATION;
-			else if (nextToken == "/")
-				operatorType = Operator::OperatorType::DIVISION;
-			else if (nextToken == "+")
-				operatorType = Operator::OperatorType::ADDITION;
-			else
-				operatorType = Operator::OperatorType::SUBTRACTION;
-
+			Operator::OperatorType operatorType = operators.at(nextToken);
 			expression->parts.push_back(std::make_unique<Operator>(operatorType));
 		}
 		else if (isValidIdentifier(nextToken))

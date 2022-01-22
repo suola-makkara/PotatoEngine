@@ -52,7 +52,12 @@ public:
 			ADDITION,
 			SUBTRACTION,
 			MULTIPLICATION,
-			DIVISION
+			DIVISION,
+			ASSIGNMENT,
+			ADD_ASSIGN,
+			SUB_ASSIGN,
+			MULT_ASSIGN,
+			DIV_ASSIGN
 		};
 
 		Operator(OperatorType operatorType) : ParseStruct(Type::OPERATOR), operatorType(operatorType) { }
