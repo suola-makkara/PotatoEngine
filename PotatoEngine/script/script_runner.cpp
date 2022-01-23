@@ -8,6 +8,7 @@
 #include "arithmetic.hpp"
 #include "assignment.hpp"
 #include "println.hpp"
+#include "uninitialized_type.hpp"
 
 #include <list>
 
@@ -108,10 +109,7 @@ std::vector<std::unique_ptr<ScriptParser::ParseStruct>> ScriptRunner::evaluateFu
 
 				continue;
 			}
-			//else
-			//	throw ParseException("Unrecognized identifier: " + identifier->name);
 		}
-		//else
 		
 		evaluated.push_back(std::move(part));
 	}
@@ -123,7 +121,8 @@ std::unique_ptr<BaseType> ScriptRunner::evaluateOperators(std::vector<std::uniqu
 {
 	validateOperatorSyntax(statement);
 
-	auto retMultDiv = evaluateMultDiv(std::move(statement));
+	auto retUnAddSub = evaluateUnaryAddSub(std::move(statement));
+	auto retMultDiv = evaluateMultDiv(std::move(retUnAddSub));
 	auto retAddSub = evalueteAddSub(std::move(retMultDiv));
 	auto retAssign = evaluateAssignment(std::move(retAddSub));
 
@@ -132,10 +131,61 @@ std::unique_ptr<BaseType> ScriptRunner::evaluateOperators(std::vector<std::uniqu
 
 void ScriptRunner::validateOperatorSyntax(const std::vector<std::unique_ptr<ScriptParser::ParseStruct>>& statement)
 {
-	// ...
+	// TODO
+}
+
+std::vector<std::unique_ptr<ScriptParser::ParseStruct>> ScriptRunner::evaluateUnaryAddSub(std::vector<std::unique_ptr<SP::ParseStruct>>&& statement)
+{
+	static std::map<OPType, UnaryFunc> addSubOps = []() {
+		std::map<OPType, UnaryFunc> m;
+		m.insert(std::make_pair<OPType, UnaryFunc>(OPType::ADDITION, &Arithmetic::addition));
+		m.insert(std::make_pair<OPType, UnaryFunc>(OPType::SUBTRACTION, &Arithmetic::subtraction));
+		return m;
+	}();
+
+	return evaluateUnaryOperator(std::move(statement), addSubOps);
 }
 
 std::vector<std::unique_ptr<ScriptParser::ParseStruct>> ScriptRunner::evaluateMultDiv(std::vector<std::unique_ptr<ScriptParser::ParseStruct>>&& statement)
+{
+	static std::map<OPType, BinaryFunc> multDivOps = []() {
+		std::map<OPType, BinaryFunc> m;
+		m.insert(std::make_pair<OPType, BinaryFunc>(OPType::MULTIPLICATION, &Arithmetic::multiplication));
+		m.insert(std::make_pair<OPType, BinaryFunc>(OPType::DIVISION, &Arithmetic::division));
+		return m;
+	}();
+
+	return evaluateBinaryOperator(std::move(statement), multDivOps);
+}
+
+std::vector<std::unique_ptr<ScriptParser::ParseStruct>> ScriptRunner::evalueteAddSub(std::vector<std::unique_ptr<ScriptParser::ParseStruct>>&& statement)
+{
+	static std::map<OPType, BinaryFunc> addSubOps = []() {
+		std::map<OPType, BinaryFunc> m;
+		m.insert(std::make_pair<OPType, BinaryFunc>(OPType::ADDITION, &Arithmetic::addition));
+		m.insert(std::make_pair<OPType, BinaryFunc>(OPType::SUBTRACTION, &Arithmetic::subtraction));
+		return m;
+	}();
+
+	return evaluateBinaryOperator(std::move(statement), addSubOps);
+}
+
+std::vector<std::unique_ptr<ScriptParser::ParseStruct>> ScriptRunner::evaluateAssignment(std::vector<std::unique_ptr<ScriptParser::ParseStruct>>&& statement)
+{
+	static std::map<OPType, BinaryFunc> assignOps = []() {
+		std::map<OPType, BinaryFunc> m;
+		m.insert(std::make_pair<OPType, BinaryFunc>(OPType::ASSIGNMENT, &Assignment::assign));
+		m.insert(std::make_pair<OPType, BinaryFunc>(OPType::ADD_ASSIGN, &Assignment::addAssign));
+		m.insert(std::make_pair<OPType, BinaryFunc>(OPType::SUB_ASSIGN, &Assignment::subAssign));
+		m.insert(std::make_pair<OPType, BinaryFunc>(OPType::MULT_ASSIGN,&Assignment::multAssign));
+		m.insert(std::make_pair<OPType, BinaryFunc>(OPType::DIV_ASSIGN, &Assignment::divAssign));
+		return m;
+	}();
+
+	return evaluateBinaryOperator(std::move(statement), assignOps);
+}
+
+std::vector<std::unique_ptr<ScriptParser::ParseStruct>> ScriptRunner::evaluateUnaryOperator(std::vector<std::unique_ptr<SP::ParseStruct>>&& statement, std::map<OPType, UnaryFunc>& opMap)
 {
 	std::vector<std::unique_ptr<ScriptParser::ParseStruct>> evaluated;
 	for (int partIndex = 0; partIndex < statement.size(); partIndex++)
@@ -146,21 +196,14 @@ std::vector<std::unique_ptr<ScriptParser::ParseStruct>> ScriptRunner::evaluateMu
 		{
 			auto opType = dynamic_cast<SP::Operator*>(part.get())->operatorType;
 
-			if (opType == OPType::MULTIPLICATION || opType == OPType::DIVISION)
+			if (opMap.count(opType) != 0 && (evaluated.size() == 0 || evaluated.back()->type == PSType::OPERATOR))
 			{
-				if (evaluated.size() > 0 && partIndex + 1 < statement.size() &&
-					evaluated.back()->type == PSType::LITERAL && statement[partIndex + 1]->type == PSType::LITERAL)
+				if (partIndex + 1 < statement.size())
 				{
-					auto left = getPtr(evaluated.back().get());
 					auto right = getPtr(statement[partIndex + 1].get());
 
-					std::unique_ptr<BaseType> ret;
-					if (opType == OPType::MULTIPLICATION)
-						ret = Arithmetic::multiplication(left, right);
-					else
-						ret = Arithmetic::division(left, right);
+					auto ret = opMap.at(opType)(context.get(), right);
 
-					evaluated.pop_back();
 					evaluated.push_back(std::make_unique<SP::Literal>(std::move(ret)));
 					partIndex++;
 				}
@@ -170,14 +213,14 @@ std::vector<std::unique_ptr<ScriptParser::ParseStruct>> ScriptRunner::evaluateMu
 				continue;
 			}
 		}
-		
+
 		evaluated.push_back(std::move(part));
 	}
 
 	return evaluated;
 }
 
-std::vector<std::unique_ptr<ScriptParser::ParseStruct>> ScriptRunner::evalueteAddSub(std::vector<std::unique_ptr<ScriptParser::ParseStruct>>&& statement)
+std::vector<std::unique_ptr<ScriptParser::ParseStruct>> ScriptRunner::evaluateBinaryOperator(std::vector<std::unique_ptr<SP::ParseStruct>>&& statement, std::map<OPType, BinaryFunc>& opMap)
 {
 	std::vector<std::unique_ptr<ScriptParser::ParseStruct>> evaluated;
 	for (int partIndex = 0; partIndex < statement.size(); partIndex++)
@@ -188,65 +231,14 @@ std::vector<std::unique_ptr<ScriptParser::ParseStruct>> ScriptRunner::evalueteAd
 		{
 			auto opType = dynamic_cast<SP::Operator*>(part.get())->operatorType;
 
-			if (opType == OPType::ADDITION || opType == OPType::SUBTRACTION)
+			if (opMap.count(opType) != 0)
 			{
 				if (evaluated.size() > 0 && partIndex + 1 < statement.size())
 				{
 					auto left = getPtr(evaluated.back().get());
 					auto right = getPtr(statement[partIndex + 1].get());
 
-					std::unique_ptr<BaseType> ret;
-					if (opType == OPType::ADDITION)
-						ret = Arithmetic::addition(left, right);
-					else
-						ret = Arithmetic::subtraction(left, right);
-
-					evaluated.pop_back();
-					evaluated.push_back(std::make_unique<SP::Literal>(std::move(ret)));
-					partIndex++;
-				}
-				else
-					throw ParseException("Expected literal");
-
-				continue;
-			}
-		}
-
-		evaluated.push_back(std::move(part));
-	}
-
-	return evaluated;
-}
-
-std::vector<std::unique_ptr<ScriptParser::ParseStruct>> ScriptRunner::evaluateAssignment(std::vector<std::unique_ptr<ScriptParser::ParseStruct>>&& statement)
-{
-	std::vector<std::unique_ptr<ScriptParser::ParseStruct>> evaluated;
-	for (int partIndex = 0; partIndex < statement.size(); partIndex++)
-	{
-		auto& part = statement[partIndex];
-
-		if (part->type == PSType::OPERATOR)
-		{
-			auto opType = dynamic_cast<SP::Operator*>(part.get())->operatorType;
-
-			if (opType == OPType::ASSIGNMENT || opType == OPType::ADD_ASSIGN || opType == OPType::SUB_ASSIGN || opType == OPType::MULT_ASSIGN || opType == OPType::DIV_ASSIGN)
-			{
-				if (evaluated.size() > 0 && partIndex + 1 < statement.size() && evaluated.back()->type == PSType::IDENTIFIER)
-				{
-					auto left = dynamic_cast<SP::Identifier*>(evaluated.back().get());
-					auto right = getPtr(statement[partIndex + 1].get());
-
-					std::unique_ptr<BaseType> ret;
-					if (opType == OPType::ASSIGNMENT)
-						ret = Assignment::assign(context.get(), left->name, right);
-					else if (opType == OPType::ADD_ASSIGN)
-						ret = Assignment::addAssign(context.get(), left->name, right);
-					else if (opType == OPType::SUB_ASSIGN)
-						ret = Assignment::subAssign(context.get(), left->name, right);
-					else if (opType == OPType::MULT_ASSIGN)
-						ret = Assignment::multAssign(context.get(), left->name, right);
-					else
-						ret = Assignment::divAssign(context.get(), left->name, right);
+					auto ret = opMap.at(opType)(context.get(), left, right);
 
 					evaluated.pop_back();
 					evaluated.push_back(std::make_unique<SP::Literal>(std::move(ret)));
@@ -270,7 +262,13 @@ BaseType* ScriptRunner::getPtr(ScriptParser::ParseStruct* part)
 	if (part->type == PSType::LITERAL)
 		return dynamic_cast<SP::Literal*>(part)->value.get();
 	else if (part->type == PSType::IDENTIFIER)
-		return context->getVariable(dynamic_cast<SP::Identifier*>(part)->name);
+	{
+		auto name = dynamic_cast<SP::Identifier*>(part)->name;
+		if (context->variables.count(name) == 0)
+			return context->createVariable(name, std::make_unique<UninitializedType>(name));
+		else
+			return context->getVariable(name);
+	}
 	else
 		throw ParseException("Expected literal or identifier");
 }

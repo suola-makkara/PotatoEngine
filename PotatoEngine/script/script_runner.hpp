@@ -16,34 +16,42 @@ public:
 	void run(const std::string& source);
 
 private:
-	using PSType = ScriptParser::ParseStruct::Type;
-	using OPType = ScriptParser::Operator::OperatorType;
 	using SP = ScriptParser;
+	using PSType = SP::ParseStruct::Type;
+	using OPType = SP::Operator::OperatorType;
+
+	using UnaryFunc = std::unique_ptr<BaseType>(*)(ScriptContext*, BaseType*);
+	using BinaryFunc = std::unique_ptr<BaseType>(*)(ScriptContext*, BaseType*, BaseType*);
 
 	std::unique_ptr<ScriptContext> context;
 
-	//std::unique_ptr<BaseType> executeExpression(std::unique_ptr<ScriptParser::ParseStruct>&& expression);
+	std::unique_ptr<BaseType> evaluateExpression(std::vector<std::unique_ptr<SP::ParseStruct>>&& expression);
 
-	std::unique_ptr<BaseType> evaluateExpression(std::vector<std::unique_ptr<ScriptParser::ParseStruct>>&& expression);
+	std::unique_ptr<BaseType> evaluateStatement(std::vector<std::unique_ptr<SP::ParseStruct>>&& statement);
 
-	std::unique_ptr<BaseType> evaluateStatement(std::vector<std::unique_ptr<ScriptParser::ParseStruct>>&& statement);
+	std::vector<std::unique_ptr<SP::ParseStruct>> evaluateSubexpressions(std::vector<std::unique_ptr<SP::ParseStruct>>&& statement);
 
-	std::vector<std::unique_ptr<ScriptParser::ParseStruct>> evaluateSubexpressions(std::vector<std::unique_ptr<ScriptParser::ParseStruct>>&& statement);
+	std::vector<std::unique_ptr<SP::ParseStruct>> evaluateFunctions(std::vector<std::unique_ptr<SP::ParseStruct>>&& statement);
 
-	std::vector<std::unique_ptr<ScriptParser::ParseStruct>> evaluateFunctions(std::vector<std::unique_ptr<ScriptParser::ParseStruct>>&& statement);
+	std::unique_ptr<BaseType> evaluateOperators(std::vector<std::unique_ptr<SP::ParseStruct>>&& statement);
 
-	std::unique_ptr<BaseType> evaluateOperators(std::vector<std::unique_ptr<ScriptParser::ParseStruct>>&& statement);
+	void validateOperatorSyntax(const std::vector<std::unique_ptr<SP::ParseStruct>>& statement);
 
-	void validateOperatorSyntax(const std::vector<std::unique_ptr<ScriptParser::ParseStruct>>& statement);
+	std::vector<std::unique_ptr<SP::ParseStruct>> evaluateUnaryAddSub(std::vector<std::unique_ptr<SP::ParseStruct>>&& statement);
 
-	std::vector<std::unique_ptr<ScriptParser::ParseStruct>> evaluateMultDiv(std::vector<std::unique_ptr<ScriptParser::ParseStruct>>&& statement);
+	std::vector<std::unique_ptr<SP::ParseStruct>> evaluateMultDiv(std::vector<std::unique_ptr<SP::ParseStruct>>&& statement);
 
-	std::vector<std::unique_ptr<ScriptParser::ParseStruct>> evalueteAddSub(std::vector<std::unique_ptr<ScriptParser::ParseStruct>>&& statement);
+	std::vector<std::unique_ptr<SP::ParseStruct>> evalueteAddSub(std::vector<std::unique_ptr<SP::ParseStruct>>&& statement);
 
-	std::vector<std::unique_ptr<ScriptParser::ParseStruct>> evaluateAssignment(std::vector<std::unique_ptr<ScriptParser::ParseStruct>>&& statement);
+	std::vector<std::unique_ptr<SP::ParseStruct>> evaluateAssignment(std::vector<std::unique_ptr<SP::ParseStruct>>&& statement);
 
 
-	BaseType* getPtr(ScriptParser::ParseStruct* part);
+	std::vector<std::unique_ptr<SP::ParseStruct>> evaluateUnaryOperator(std::vector<std::unique_ptr<SP::ParseStruct>>&& statement, std::map<OPType, UnaryFunc>& opMap);
 
-	std::vector<std::unique_ptr<ScriptParser::ParseStruct>> unpackExpression(std::unique_ptr<ScriptParser::ParseStruct>&& expression);
+	std::vector<std::unique_ptr<SP::ParseStruct>> evaluateBinaryOperator(std::vector<std::unique_ptr<SP::ParseStruct>>&& statement, std::map<OPType, BinaryFunc>& opMap);
+
+
+	BaseType* getPtr(SP::ParseStruct* part);
+
+	std::vector<std::unique_ptr<SP::ParseStruct>> unpackExpression(std::unique_ptr<SP::ParseStruct>&& expression);
 };

@@ -14,6 +14,7 @@ BaseType* ScriptContext::getVariable(const std::string& name)
 
 BaseType* ScriptContext::createVariable(const std::string& name, std::unique_ptr<BaseType>&& var)
 {
+	auto ptr = var.get();
 	variables[name] = std::move(var);
-	return variables.at(name).get();
+	return ptr;
 }

@@ -11,7 +11,8 @@ public:
 		VOID,
 		INTEGER,
 		STRING,
-		FUNCTION
+		FUNCTION,
+		UNINITIALIZED
 	};
 
 	BaseType(DynamicType dynamicType) : dynamicType(dynamicType) { }
