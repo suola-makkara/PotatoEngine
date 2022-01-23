@@ -76,5 +76,9 @@ public:
 	static std::unique_ptr<ScriptParser::Expression> parseSource(const std::string& source);
 
 private:
+	static std::vector<std::string> preprocessStrings(std::string& source);
+
+	static void replaceStrings(std::vector<std::string>& tokens, std::vector<std::string>&& strings);
+
 	static std::unique_ptr<ScriptParser::Expression> parseExpression(const std::vector<std::string>& tokens);
 };

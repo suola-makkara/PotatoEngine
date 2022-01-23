@@ -12,9 +12,19 @@ std::string runScript(const std::string& script)
 	return outStream.str();
 }
 
-TEST(ScriptTest, StringTest)
+TEST(ScriptTest, StringTest1)
 {
 	EXPECT_EQ(runScript(R"(print("test"))"), "test");
+}
+
+TEST(ScriptTest, StringTest2)
+{
+	EXPECT_EQ(runScript(R"(print("test test"))"), "test test");
+}
+
+TEST(ScriptTest, StringTest3)
+{
+	EXPECT_EQ(runScript("print(\"test\n\n\t\ttest\")"), "test\n\n\t\ttest");
 }
 
 TEST(ScriptTest, IntegerAdditionTest)

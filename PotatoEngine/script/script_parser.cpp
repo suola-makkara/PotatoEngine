@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <map>
+#include <cmath>
 
 std::unique_ptr<ScriptParser::Expression> ScriptParser::parseSource(const std::string& source)
 {
@@ -27,9 +28,58 @@ std::unique_ptr<ScriptParser::Expression> ScriptParser::parseSource(const std::s
 	static const std::set<char> splitCharSet = { ' ', '\n', '\t', '\r' };
 	static const std::set<std::string> splitTokenSet = { "+", "-", "*", "/", "(", ")", "\"", "=", "+=", "-=", "*=", "/=" };
 
-	auto tokens = Tokenizer::tokenize(source, validCharSet, splitCharSet, splitTokenSet, 2);
+	std::string sourceCopy = source;
+	auto strings = preprocessStrings(sourceCopy);
+	auto tokens = Tokenizer::tokenize(sourceCopy, validCharSet, splitCharSet, splitTokenSet, 2);
+	replaceStrings(tokens, std::move(strings));
 
 	return parseExpression(tokens);
+}
+
+std::vector<std::string> ScriptParser::preprocessStrings(std::string& source)
+{
+	std::string replacedSource = "";
+	std::vector<std::string> strings;
+
+	size_t offset = 0;
+	while (true)
+	{
+		auto start = source.find('"', offset);
+		if (start != std::string::npos)
+		{
+			replacedSource += source.substr(offset, start - offset + 1);
+
+			auto end = source.find('"', start + 1);
+			if (end != std::string::npos)
+			{
+				strings.push_back(source.substr(start, end - start + 1));
+				offset = end + 1;
+			}
+			else
+				throw ParseException("Expected \"");
+		}
+		else
+		{
+			replacedSource += source.substr(offset);
+			break;
+		}
+	}
+
+	source = replacedSource;
+	return strings;
+}
+
+void ScriptParser::replaceStrings(std::vector<std::string>& tokens, std::vector<std::string>&& strings)
+{
+	int stringIndex = 0;
+	for (auto& token : tokens)
+	{
+		if (token == "\"")
+		{
+			token = std::move(strings[stringIndex]);
+			stringIndex++;
+		}
+	}
 }
 
 std::unique_ptr<ScriptParser::Expression> ScriptParser::parseExpression(const std::vector<std::string>& tokens)
@@ -120,20 +170,9 @@ std::unique_ptr<ScriptParser::Expression> ScriptParser::parseExpression(const st
 
 			tokenIndex = closeIndex;
 		}
-		else if (nextToken == "\"")
+		else if (nextToken[0] == '\"')
 		{
-			int nextQuoteIndex = getUntil(tokens, tokenIndex + 1, "\"");
-			if (nextQuoteIndex == -1)
-				throw ParseException("Missing \"");
-
-			std::string parsedString = "";
-			tokenIndex++;
-			for (; tokenIndex < nextQuoteIndex; tokenIndex++)
-				parsedString += tokens[tokenIndex];
-
-			expression->parts.push_back(std::make_unique<Literal>(std::make_unique<StringType>(parsedString)));
-
-			tokenIndex = nextQuoteIndex;
+			expression->parts.push_back(std::make_unique<Literal>(std::make_unique<StringType>(nextToken.substr(1, nextToken.size() - 2))));
 		}
 		else if (operators.count(nextToken) != 0)
 		{
