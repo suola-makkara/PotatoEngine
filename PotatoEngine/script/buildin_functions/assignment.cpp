@@ -15,7 +15,7 @@ std::unique_ptr<BaseType> Assignment::assign(ScriptContext* context, BaseType* l
 	else if (left->dynamicType == BaseType::DynamicType::STRING && right->dynamicType == BaseType::DynamicType::STRING)
 		dynamic_cast<StringType*>(left)->value = dynamic_cast<StringType*>(right)->value;
 	else
-		throw ParseException("No operator = defined for ...");
+		throw ParseException("No operator = defined for " + left->getTypeName() + " and " + right->getTypeName());
 
 	return std::make_unique<VoidType>();
 }
@@ -25,7 +25,7 @@ std::unique_ptr<BaseType> Assignment::addAssign(ScriptContext*, BaseType* left, 
 	if (left->dynamicType == BaseType::DynamicType::INTEGER && right->dynamicType == BaseType::DynamicType::INTEGER)
 		dynamic_cast<IntegerType*>(left)->value += dynamic_cast<IntegerType*>(right)->value;
 	else
-		throw ParseException("No operator += defined for ...");
+		throw ParseException("No operator += defined for " + left->getTypeName() + " and " + right->getTypeName());
 
 	return std::make_unique<VoidType>();
 }
@@ -35,7 +35,7 @@ std::unique_ptr<BaseType> Assignment::subAssign(ScriptContext*, BaseType* left, 
 	if (left->dynamicType == BaseType::DynamicType::INTEGER && right->dynamicType == BaseType::DynamicType::INTEGER)
 		dynamic_cast<IntegerType*>(left)->value -= dynamic_cast<IntegerType*>(right)->value;
 	else
-		throw ParseException("No operator -= defined for ...");
+		throw ParseException("No operator -= defined for " + left->getTypeName() + " and " + right->getTypeName());
 
 	return std::make_unique<VoidType>();
 }
@@ -45,7 +45,7 @@ std::unique_ptr<BaseType> Assignment::multAssign(ScriptContext*, BaseType* left,
 	if (left->dynamicType == BaseType::DynamicType::INTEGER && right->dynamicType == BaseType::DynamicType::INTEGER)
 		dynamic_cast<IntegerType*>(left)->value *= dynamic_cast<IntegerType*>(right)->value;
 	else
-		throw ParseException("No operator *= defined for ...");
+		throw ParseException("No operator *= defined for " + left->getTypeName() + " and " + right->getTypeName());
 
 	return std::make_unique<VoidType>();
 }
@@ -55,7 +55,7 @@ std::unique_ptr<BaseType> Assignment::divAssign(ScriptContext*, BaseType* left, 
 	if (left->dynamicType == BaseType::DynamicType::INTEGER && right->dynamicType == BaseType::DynamicType::INTEGER)
 		dynamic_cast<IntegerType*>(left)->value /= dynamic_cast<IntegerType*>(right)->value;
 	else
-		throw ParseException("No operator /= defined for ...");
+		throw ParseException("No operator /= defined for " + left->getTypeName() + " and " + right->getTypeName());
 
 	return std::make_unique<VoidType>();
 }

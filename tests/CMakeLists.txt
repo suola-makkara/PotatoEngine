@@ -7,6 +7,6 @@ set (LIB
 	PotatoEngineLib
 )
 
-add_executable(PotatoEngineTest "test_main.cpp" "script_test.hpp")
+add_executable(PotatoEngineTest "test_main.cpp" "script_test.hpp" "stack_test.hpp")
 target_link_libraries(PotatoEngineTest ${LIB})
 gtest_add_tests(TARGET PotatoEngineTest TEST_SUFFIX "" TEST_LIST "")
