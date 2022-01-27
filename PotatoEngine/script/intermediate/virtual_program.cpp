@@ -1,7 +1,7 @@
 #include "virtual_program.hpp"
 
 VirtualProgram::VirtualProgram()
-	: stackStorage(10'000, 1'000), stackStorageIndex{}, instructionPtr{} { } //staticStorage(10'000, 1'000), stackStorageIndex{}, staticStorageIndex{} { }
+	: stackStorage(10'000, 1'000), stackStorageIndex{}, instructionPtr{} { }
 
 void VirtualProgram::run()
 {
@@ -44,26 +44,3 @@ StorageIndex VirtualProgram::addInstruction(std::unique_ptr<PopStack>&& instruct
 	addInstruction(std::unique_ptr<Instruction>(std::move(instruction)));
 	return -1;
 }
-
-/*#include "virtual_program.hpp"
-#include "instructions.hpp"
-
-void VirtualProgram::run()
-{
-	
-}
-
-Storage* VirtualProgram::createStorage()
-{
-	storage.push_back(Storage(Storage::StorageType::NONE));
-	return &storage.back();
-}
-
-InstrPtr VirtualProgram::appendInstruction(std::unique_ptr<Instruction>&& instruction)
-{
-	InstrPtr insrtPtr = instructions.size();
-	instruction->programPtr = this;
-	instructions.push_back(std::move(instruction));
-	return insrtPtr;
-}
-*/

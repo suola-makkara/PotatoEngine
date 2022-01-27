@@ -1,12 +1,7 @@
 #pragma once
 
-//#include "program_allocator.hpp"
 #include "storage.hpp"
 #include "instructions.hpp"
-
-//#include <vector>
-//#include <memory>
-//#include <list>
 
 #include <stack>
 #include <memory>
@@ -54,31 +49,4 @@ private:
 	std::vector<std::unique_ptr<Instruction>> instructions;
 
 	size_t instructionPtr;
-
-	//void run();
-
-
-
-
-	//size_t store();
-	//void push();
-	//void pop();
-
-
-	//void allocate(size_t);
-
-
-
-	//Storage* createStorage();
-
-	//InstrPtr appendInstruction(std::unique_ptr<Instruction>&& instruction);
-
-
-	//std::list<Storage> storage;
-
-	//std::vector<std::unique_ptr<Instruction>> instructions;
-	//std::stack<InstrPtr> returnPtrStack;
-	//InstrPtr instructionPtr;
-
-	//ProgramAllocator allocator;
 };
