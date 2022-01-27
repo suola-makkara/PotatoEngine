@@ -1,5 +1,4 @@
 #include "virtual_program.hpp"
-#include "instructions.hpp"
 
 #include "gtest/gtest.h"
 
@@ -10,21 +9,20 @@ TEST(VirtualProgramTest, StorageAndAllocationTest)
 {
 	VirtualProgram vp;
 
-	auto s0 = vp.createStorage();
-	auto s1 = vp.createStorage();
-	auto s2 = vp.createStorage();
+	auto s0 = vp.addInstruction(std::make_unique<CFunctionCall>(test10, std::vector<StorageIndex>()));
+	auto s1 = vp.addInstruction(std::make_unique<CFunctionCall>(alloc, std::vector<StorageIndex>{s0}));
 
-	*s0 = vp.allocator.allocate(10);
-	*s1 = vp.allocator.allocate(20);
-
-	vp.appendInstruction(std::make_unique<CFunctionCall>(add, s2, std::vector{ s0, s1 }));
 	vp.run();
 
-	ASSERT_EQ(s0->type, Storage::StorageType::INTEGER);
-	ASSERT_EQ(s1->type, Storage::StorageType::INTEGER);
-	ASSERT_EQ(s2->type, Storage::StorageType::INTEGER);
+	auto p0 = vp.getStackStorage(s0);
+	auto p1 = vp.getStackStorage(s1);
 
-	EXPECT_EQ(*reinterpret_cast<int*>(s0->valuePtr), 10);
-	EXPECT_EQ(*reinterpret_cast<int*>(s1->valuePtr), 20);
-	EXPECT_EQ(*reinterpret_cast<int*>(s2->valuePtr), 30);
+	ASSERT_EQ(p0->size, 1);
+	ASSERT_EQ(p1->size, 1);
+
+	ASSERT_EQ(p0->type, StorageType::INTEGER);
+	ASSERT_EQ(p1->type, StorageType::INTEGER);
+
+	EXPECT_EQ(*reinterpret_cast<int*>(p0->valuePtr), 10);
+	EXPECT_EQ(*reinterpret_cast<int*>(p1->valuePtr), 10);
 }

@@ -3,6 +3,7 @@
 #include "script_test.hpp"
 #include "stack_test.hpp"
 #include "virtual_program_test.hpp"
+#include "storage_test.hpp"
 
 #include "gtest/gtest.h"
 

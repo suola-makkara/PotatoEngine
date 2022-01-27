@@ -7,20 +7,17 @@
 class ProgramAllocator : public Noncopyable
 {
 public:
-	ProgramAllocator(size_t stackMem)//, size_t readonlyMem)
-		: stack(stackMem) { } //, readonly(readonlyMem) { }
+	ProgramAllocator(size_t stackMem, size_t staticMem);
 
-	Storage allocate(int value)
-	{
-		auto ptr = stack.allocate<int>();
-		*ptr = value;
+	Storage allocate(int value);
 
-		return Storage(Storage::StorageType::INTEGER, ptr, 1);
-	}
+	Storage allocateStatic(int value);
 
-	//void heapAllocate(Value* target, int value);
+	void push();
+
+	void pop();
 
 private:
 	ProgramStack stack;
-	//ProgramStack readonly;
+	ProgramStack staticMemory;
 };

@@ -1,4 +1,49 @@
-#pragma once
+#include "instructions.hpp"
+#include "virtual_program.hpp"
+
+void test10(VirtualProgram* programPtr, std::vector<StorageIndex>& args)
+{
+	auto ptr = programPtr->allocateStackStorage<int>(1);
+	*reinterpret_cast<int*>(ptr->valuePtr) = 10;
+}
+
+void alloc(VirtualProgram* programPtr, std::vector<StorageIndex>& args)
+{
+	StorageUnit* ptr = programPtr->getStackStorage(args[0]);
+	switch (ptr->type)
+	{
+	case StorageType::INTEGER:
+	{
+		auto s0 = programPtr->allocateStackStorage<int>(ptr->size);
+		for (int i = 0; i < ptr->size; i++)
+			reinterpret_cast<int*>(s0->valuePtr)[i] = reinterpret_cast<int*>(ptr->valuePtr)[i];
+		return;
+		break;
+	}
+	}
+
+	programPtr->allocateStackStorage<void>(0);
+}
+
+CFunctionCall::CFunctionCall(Func func, std::vector<StorageIndex>&& args)
+	: func(func), args(std::move(args)) { }
+
+void CFunctionCall::execute()
+{
+	func(programPtr, args);
+}
+
+void PushStack::execute()
+{
+
+}
+
+void PopStack::execute()
+{
+
+}
+
+/*#pragma once
 
 #include "virtual_program.hpp"
 #include "program_allocator.hpp"
@@ -8,6 +53,7 @@
 #include <vector>
 #include <tuple>
 #include <array>
+#include <iostream>
 
 Storage assign(ProgramAllocator* alloc, std::vector<Storage*>& args)
 {
@@ -37,6 +83,16 @@ Storage add(ProgramAllocator* alloc, std::vector<Storage*>& args)
 		}
 		break;
 	}
+
+	return Storage(Storage::StorageType::VOID);
+}
+
+Storage println(ProgramAllocator* alloc, std::vector<Storage*>& args)
+{
+	if (args[0]->type == Storage::StorageType::INTEGER)
+		std::cout << *reinterpret_cast<int*>(args[0]) << '\n';
+
+	return Storage(Storage::StorageType::VOID);
 }
 
 
@@ -47,3 +103,31 @@ void CFunctionCall::execute()
 {
 	*out = func(&programPtr->allocator, args);
 }
+
+
+Jump::Jump(InstrPtr jumpPtr) : jumpPtr(jumpPtr) { }
+
+void Jump::execute()
+{
+	programPtr->instructionPtr = jumpPtr;
+}
+
+
+FunctionCall::FunctionCall(InstrPtr entrancePtr)
+	: entrancePtr(entrancePtr) { }
+
+
+void FunctionCall::execute()
+{
+	programPtr->returnPtrStack.push(programPtr->instructionPtr);
+	programPtr->instructionPtr = entrancePtr;
+	programPtr->allocator.push();
+}
+
+void FunctionReturn::execute()
+{
+	programPtr->instructionPtr = programPtr->returnPtrStack.top();
+	programPtr->returnPtrStack.pop();
+	programPtr->allocator.pop();
+}
+*/
